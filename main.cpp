@@ -1,6 +1,13 @@
 #include "stdafx.h"
 #include "main.h"
 
+struct VERTEX
+{
+    FLOAT x, y, z, w;
+    DWORD color;
+};
+#define D3DFVF_VERTEX (D3DFVF_XYZW|D3DFVF_DIFFUSE)
+
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 
 bool InitD3D(HWND hWnd, IDirect3D9 **d3d, IDirect3DDevice9 **device)
