@@ -3,7 +3,7 @@
 
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 
-bool initD3D(HWND hWnd, IDirect3D9 **d3d, IDirect3DDevice9 **device)
+bool InitD3D(HWND hWnd, IDirect3D9 **d3d, IDirect3DDevice9 **device)
 {
     if (NULL == (*d3d = Direct3DCreate9(D3D_SDK_VERSION)))
     {
@@ -29,6 +29,11 @@ bool initD3D(HWND hWnd, IDirect3D9 **d3d, IDirect3DDevice9 **device)
     }
 
     return true;
+}
+
+void Render(IDirect3DDevice9 *device)
+{
+    ;
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*lpCmdLine*/, int nCmdShow)
@@ -63,7 +68,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     IDirect3D9 *d3d = NULL;
     IDirect3DDevice9 *device = NULL;
 
-    if (!initD3D(hWnd, &d3d, &device))
+    if (!InitD3D(hWnd, &d3d, &device))
         return FALSE;
 
 
@@ -73,11 +78,18 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
 
     // MAIN MESSAGE LOOP:
-    MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0))
+    MSG msg = {0};
+    while (msg.message != WM_QUIT)
     {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        else
+        {
+            Render(device);
+        }
     }
 
 
@@ -92,14 +104,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code here...
-            EndPaint(hWnd, &ps);
-            break;
-        }
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
