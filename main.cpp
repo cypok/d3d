@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "main.h"
 
+typedef IDirect3DDevice9 Device;
+
 #define RELEASE_IFACE(x) if(x!=NULL) x->Release();
 
 struct VERTEX
@@ -12,7 +14,7 @@ struct VERTEX
 
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 
-bool InitD3D(HWND hWnd, IDirect3D9 **d3d, IDirect3DDevice9 **device)
+bool InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
 {
     if (NULL == (*d3d = Direct3DCreate9(D3D_SDK_VERSION)))
     {
@@ -40,7 +42,7 @@ bool InitD3D(HWND hWnd, IDirect3D9 **d3d, IDirect3DDevice9 **device)
     return true;
 }
 
-void Render(IDirect3DDevice9 *device)
+void Render(Device *device)
 {
     ;
 }
@@ -75,7 +77,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
     // INITIALIZING D3D
     IDirect3D9 *d3d = NULL;
-    IDirect3DDevice9 *device = NULL;
+    Device *device = NULL;
 
     if (!InitD3D(hWnd, &d3d, &device))
         return FALSE;
