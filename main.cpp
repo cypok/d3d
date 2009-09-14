@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "main.h"
 
+#define RELEASE_IFACE(x) if(x!=NULL) x->Release();
+
 struct VERTEX
 {
     FLOAT x, y, z, w;
@@ -101,8 +103,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
 
     // CLEANING
-    d3d->Release();
-    device->Release();
+    RELEASE_IFACE(d3d);
+    RELEASE_IFACE(device);
 
     return (int) msg.wParam;
 }
