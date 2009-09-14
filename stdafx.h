@@ -7,6 +7,7 @@
 
 #include "targetver.h"
 #include <d3d9.h>
+#include <exception>
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // Windows Header Files:

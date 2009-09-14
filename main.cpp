@@ -14,12 +14,10 @@ struct VERTEX
 
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 
-bool InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
+void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
 {
     if (NULL == (*d3d = Direct3DCreate9(D3D_SDK_VERSION)))
-    {
-        return false;
-    }
+        throw std::exception();
 
     D3DPRESENT_PARAMETERS params;
     memset(&params, 0, sizeof(params));
@@ -36,10 +34,8 @@ bool InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
                                     &params,
                                     device))
     {
-        return false;
+        throw std::exception();
     }
-
-    return true;
 }
 
 void Render(Device *device)
@@ -49,60 +45,64 @@ void Render(Device *device)
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*lpCmdLine*/, int nCmdShow)
 {
-    TCHAR window_title[] = _T("D3D window");
-    TCHAR window_class_name[] = _T("D3D_APP");
-
-    // REGISTERING AND CREATING WINDOW
-    WNDCLASSEX wcex;
-    wcex.cbSize = sizeof(WNDCLASSEX);
-    wcex.style			= CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc	= WndProc;
-    wcex.cbClsExtra		= 0;
-    wcex.cbWndExtra		= 0;
-    wcex.hInstance		= hInstance;
-    wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
-    wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName	= 0;
-    wcex.lpszClassName	= window_class_name;
-    wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
-    RegisterClassEx(&wcex);
-
-    HWND hWnd = CreateWindow(window_class_name, window_title, WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
-
-    if (!hWnd)
-        return FALSE;
-
-
-    // INITIALIZING D3D
     IDirect3D9 *d3d = NULL;
     Device *device = NULL;
 
-    if (!InitD3D(hWnd, &d3d, &device))
-        return FALSE;
-
-
-    // SHOWING WINDOW
-    ShowWindow(hWnd, nCmdShow);
-    UpdateWindow(hWnd);
-
-
-    // MAIN MESSAGE LOOP:
     MSG msg = {0};
-    while (msg.message != WM_QUIT)
+    try
     {
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        TCHAR window_title[] = _T("D3D window");
+        TCHAR window_class_name[] = _T("D3D_APP");
+
+        // REGISTERING AND CREATING WINDOW
+        WNDCLASSEX wcex;
+        wcex.cbSize = sizeof(WNDCLASSEX);
+        wcex.style			= CS_HREDRAW | CS_VREDRAW;
+        wcex.lpfnWndProc	= WndProc;
+        wcex.cbClsExtra		= 0;
+        wcex.cbWndExtra		= 0;
+        wcex.hInstance		= hInstance;
+        wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
+        wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
+        wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
+        wcex.lpszMenuName	= 0;
+        wcex.lpszClassName	= window_class_name;
+        wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+        RegisterClassEx(&wcex);
+
+        HWND hWnd;
+        if (NULL == (hWnd = CreateWindow(window_class_name, window_title, WS_OVERLAPPEDWINDOW,
+                                         CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL)))
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            throw std::exception();
         }
-        else
+
+        // INITIALIZING D3D
+        InitD3D(hWnd, &d3d, &device);
+
+
+        // SHOWING WINDOW
+        ShowWindow(hWnd, nCmdShow);
+        UpdateWindow(hWnd);
+
+
+        // MAIN MESSAGE LOOP:
+        while (msg.message != WM_QUIT)
         {
-            Render(device);
+            if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+            else
+            {
+                Render(device);
+            }
         }
     }
-
+    catch(...)
+    {
+    }
 
     // CLEANING
     RELEASE_IFACE(d3d);
