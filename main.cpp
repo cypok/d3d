@@ -12,6 +12,21 @@ struct VERTEX
 };
 #define D3DFVF_VERTEX (D3DFVF_XYZW|D3DFVF_DIFFUSE)
 
+
+#define COLOR_DEFINE(name, r, g, b) \
+	const DWORD name = D3DCOLOR_XRGB( (r), (g), (b) );
+
+COLOR_DEFINE( BLACK,       0,   0,   0 )
+COLOR_DEFINE( BLEU,        0,   0, 255 )
+COLOR_DEFINE( GREEN,       0, 255,   0 )
+COLOR_DEFINE( CYAN,        0, 255, 255 )
+COLOR_DEFINE( RED,       255,   0,   0 )
+COLOR_DEFINE( MAGENTA,   255,   0, 255 )
+COLOR_DEFINE( YELLOW,    255, 255,   0 )
+COLOR_DEFINE( WHITE,     255, 255, 255 )
+COLOR_DEFINE( GRAY,      128, 128, 128 )
+
+
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 
 void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
