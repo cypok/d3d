@@ -76,6 +76,8 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
     params.SwapEffect = D3DSWAPEFFECT_DISCARD;
     params.BackBufferFormat = D3DFMT_UNKNOWN;
     params.hDeviceWindow = hWnd;
+    params.EnableAutoDepthStencil = TRUE;
+    params.AutoDepthStencilFormat = D3DFMT_D16;
 
     OK( (*d3d)->CreateDevice(D3DADAPTER_DEFAULT,
                                     D3DDEVTYPE_HAL,
@@ -83,6 +85,9 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
                                     D3DCREATE_SOFTWARE_VERTEXPROCESSING,
                                     &params,
                                     device) );
+
+    //(*device)->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );
+    (*device)->SetRenderState( D3DRS_ZENABLE, D3DZB_TRUE );
 }
 
 void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIndexBuffer9 **index_buffer)
