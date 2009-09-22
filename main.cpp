@@ -50,6 +50,27 @@ const DWORD indices[] = {
 const unsigned vertices_count = 8;
 const unsigned indices_count = 36;
 
+enum SphericCoords
+{
+    RHO = 0,
+    THETA = 1,
+    PHI = 2
+};
+
+struct Coord
+{
+    float min;
+    float max;
+    float delta;
+    float initial;
+};
+
+const Coord COORDS[] = {
+    { 1.0f,     10.0f,      0.25f,      5.0f      }, // RHO
+    { 0.0f,     D3DX_PI,    D3DX_PI/24, D3DX_PI/2 }, // THETA
+    { -1e37f,   1e37f,      D3DX_PI/24, 0.0f      }  // PHI
+};
+
 const wchar_t SHADER_FILE[] = _T("shader.vsh");
 
 const int WINDOW_WIDTH = 600;
@@ -57,10 +78,21 @@ const int WINDOW_HEIGHT = 600;
 
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 
+// HELPERS
 void OK(HRESULT result)
 {
     if (result != D3D_OK)
         throw std::exception();
+}
+
+float GCF(HWND hWnd, SphericCoords coord) // GetClassFloat
+{
+    static long res;
+    return *(float*)(&(res = GetClassLong(hWnd, 4*coord)));
+}
+void SCF(HWND hWnd, SphericCoords coord, float value) // SetClassFloat
+{
+    SetClassLong(hWnd, 4*coord, *(LONG*)(&value));
 }
 
 void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
@@ -123,9 +155,7 @@ void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_dec
     RELEASE_IFACE(code);
 }
 
-void Render(Device *device,
-            IDirect3DVertexBuffer9 *vertex_buffer, IDirect3DIndexBuffer9 *index_buffer,
-            IDirect3DVertexShader9 *vertex_shader, IDirect3DVertexDeclaration9 *vertex_declaration)
+void CalcMatrix(Device *device, float rho, float tetha, float phi)
 {
     FLOAT matrix[] = {
          0.5f,  0.0f,  0.0f,  0.0f,
@@ -133,6 +163,14 @@ void Render(Device *device,
          0.0f,  0.0f,  0.5f,  0.0f,
          0.0f,  0.0f,  0.0f,  1.0f,
     };
+
+    OK( device->SetVertexShaderConstantF(0, matrix, 4) );
+}
+
+void Render(Device *device,
+            IDirect3DVertexBuffer9 *vertex_buffer, IDirect3DIndexBuffer9 *index_buffer,
+            IDirect3DVertexShader9 *vertex_shader, IDirect3DVertexDeclaration9 *vertex_declaration)
+{
     OK( device->BeginScene() );
 
     OK( device->Clear( 0, NULL, D3DCLEAR_TARGET, GRAY, 1.0f, 0 ) );
@@ -140,7 +178,6 @@ void Render(Device *device,
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    OK( device->SetVertexShaderConstantF(0, matrix, 4) );
     OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertices_count, 0, indices_count/3) );
 
     OK( device->EndScene() );
@@ -168,7 +205,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         wcex.cbSize = sizeof(WNDCLASSEX);
         wcex.style			= CS_HREDRAW | CS_VREDRAW;
         wcex.lpfnWndProc	= WndProc;
-        wcex.cbClsExtra		= 0;
+        wcex.cbClsExtra		= sizeof(float)*3; // here would be stored view coordinates
         wcex.cbWndExtra		= 0;
         wcex.hInstance		= hInstance;
         wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
@@ -186,6 +223,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             throw std::exception();
         }
 
+        SCF(hWnd, RHO, COORDS[RHO].initial);
+        SCF(hWnd, THETA, COORDS[THETA].initial);
+        SCF(hWnd, PHI, COORDS[PHI].initial);
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
@@ -208,6 +248,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             }
             else
             {
+                CalcMatrix(device,
+                    GCF(hWnd, RHO),
+                    GCF(hWnd, THETA),
+                    GCF(hWnd, PHI)
+                );
                 Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration);
             }
         }
@@ -227,10 +272,33 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     return (int) msg.wParam;
 }
 
+void IncCoord(HWND hWnd, SphericCoords coord)
+{
+    float var = GCF(hWnd, coord) + COORDS[coord].delta;
+    SCF(hWnd, coord, min(var, COORDS[coord].max));
+}
+
+void DecCoord(HWND hWnd, SphericCoords coord)
+{
+    float var = GCF(hWnd, coord) - COORDS[coord].delta;
+    SCF(hWnd, coord, max(var, COORDS[coord].min));
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_KEYDOWN:
+        switch(wParam)
+        {
+        case VK_UP:     DecCoord(hWnd, RHO);   break;
+        case VK_DOWN:   IncCoord(hWnd, RHO);   break;
+        case VK_PRIOR:  DecCoord(hWnd, THETA); break;
+        case VK_NEXT:   IncCoord(hWnd, THETA); break;
+        case VK_RIGHT:  DecCoord(hWnd, PHI);   break;
+        case VK_LEFT:   IncCoord(hWnd, PHI);   break;
+        }
+        break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
