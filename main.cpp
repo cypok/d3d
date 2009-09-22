@@ -30,14 +30,14 @@ const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 };
 
 const VERTEX vertices[] = {
-    {  1.0f,  1.0f,   0.0f, WHITE   }, // 0
-    {  1.0f,  1.0f,   2.0f, CYAN    }, // 1
-    { -1.0f,  1.0f,   0.0f, MAGENTA }, // 2
-    { -1.0f,  1.0f,   2.0f, BLUE    }, // 3
-    { -1.0f, -1.0f,   0.0f, RED     }, // 4
-    { -1.0f, -1.0f,   2.0f, BLACK   }, // 5
-    {  1.0f, -1.0f,   0.0f, YELLOW  }, // 6
-    {  1.0f, -1.0f,   2.0f, GREEN   }, // 7
+    {  1.0f,  1.0f,  -1.0f, WHITE   }, // 0
+    {  1.0f,  1.0f,   1.0f, CYAN    }, // 1
+    { -1.0f,  1.0f,  -1.0f, MAGENTA }, // 2
+    { -1.0f,  1.0f,   1.0f, BLUE    }, // 3
+    { -1.0f, -1.0f,  -1.0f, RED     }, // 4
+    { -1.0f, -1.0f,   1.0f, BLACK   }, // 5
+    {  1.0f, -1.0f,  -1.0f, YELLOW  }, // 6
+    {  1.0f, -1.0f,   1.0f, GREEN   }, // 7
 };
 const DWORD indices[] = {
     0, 2, 3,    0, 3, 1, // +y
