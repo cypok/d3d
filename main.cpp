@@ -69,7 +69,7 @@ const unsigned indices_count = 36 + 24;
 const unsigned triangles_count = 12;
 const unsigned lines_count = 12;
 
-enum SphericCoords
+enum SphericalCoords
 {
     RHO = 0,
     THETA = 1,
@@ -104,12 +104,12 @@ void OK(HRESULT result)
         throw std::exception();
 }
 
-float GCF(HWND hWnd, SphericCoords coord) // GetClassFloat
+float GCF(HWND hWnd, SphericalCoords coord) // GetClassFloat
 {
     static long res;
     return *(float*)(&(res = GetClassLong(hWnd, 4*coord)));
 }
-void SCF(HWND hWnd, SphericCoords coord, float value) // SetClassFloat
+void SCF(HWND hWnd, SphericalCoords coord, float value) // SetClassFloat
 {
     SetClassLong(hWnd, 4*coord, *(LONG*)(&value));
 }
@@ -322,13 +322,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     return (int) msg.wParam;
 }
 
-void IncCoord(HWND hWnd, SphericCoords coord)
+void IncCoord(HWND hWnd, SphericalCoords coord)
 {
     float var = GCF(hWnd, coord) + COORDS[coord].delta;
     SCF(hWnd, coord, min(var, COORDS[coord].max));
 }
 
-void DecCoord(HWND hWnd, SphericCoords coord)
+void DecCoord(HWND hWnd, SphericalCoords coord)
 {
     float var = GCF(hWnd, coord) - COORDS[coord].delta;
     SCF(hWnd, coord, max(var, COORDS[coord].min));
