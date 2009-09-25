@@ -85,7 +85,7 @@ struct Coord
 };
 
 const Coord COORDS[] = {
-    { 1.0f,     10.0f,      0.25f,      5.0f   }, // RHO
+    { 3.0f,     10.0f,      0.25f,      3.0f   }, // RHO
     { M_PI/8,   M_PI*7/8,   M_PI/24,    M_PI/2 }, // THETA
     { -1e37f,   1e37f,      M_PI/24,    0.0f   }  // PHI
 };
@@ -201,9 +201,19 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
     );
 
     // Projective
-    // ...
+    float front = COORDS[RHO].min / 8.0f;
+    float back = COORDS[RHO].max * 2.0f;
+    float a = back / (back - front);
+    float b = - front * a;
 
-    OK( device->SetVertexShaderConstantF(0, viewMatrix, 4) );
+    D3DXMATRIX projMatrix(
+        front,  0,      0, 0,
+        0,      front,  0, 0,
+        0,      0,      a, b,
+        0,      0,      1, 0
+    );
+
+    OK( device->SetVertexShaderConstantF(0, projMatrix * viewMatrix, 4) );
 }
 
 void Render(Device *device,
