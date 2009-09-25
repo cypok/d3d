@@ -39,15 +39,6 @@ const VERTEX vertices[] = {
     { -1.0f, -1.0f,  1.0f, BLACK   }, // 5
     {  1.0f, -1.0f, -1.0f, YELLOW  }, // 6
     {  1.0f, -1.0f,  1.0f, GREEN   }, // 7
-    // colored cube edges
-    {  1.0f,  1.0f, -1.0f, BLACK   }, // 8+0
-    {  1.0f,  1.0f,  1.0f, RED     }, // 8+1
-    { -1.0f,  1.0f, -1.0f, GREEN   }, // 8+2
-    { -1.0f,  1.0f,  1.0f, YELLOW  }, // 8+3
-    { -1.0f, -1.0f, -1.0f, CYAN    }, // 8+4
-    { -1.0f, -1.0f,  1.0f, WHITE   }, // 8+5
-    {  1.0f, -1.0f, -1.0f, BLUE    }, // 8+6
-    {  1.0f, -1.0f,  1.0f, MAGENTA }, // 8+7
 };
 const DWORD indices[] = {
     0, 2, 3,    0, 3, 1, // +y
@@ -56,15 +47,14 @@ const DWORD indices[] = {
     6, 0, 1,    6, 1, 7, // +x
     1, 3, 5,    1, 5, 7, // +z
     4, 2, 0,    4, 0, 6, // -z
-    8+ 0, 8+ 1,   8+ 2, 8+ 3,
-    8+ 4, 8+ 5,   8+ 6, 8+ 7,
-    8+ 0, 8+ 2,   8+ 1, 8+ 3,
-    8+ 4, 8+ 6,   8+ 5, 8+ 7,
-    8+ 1, 8+ 7,   8+ 3, 8+ 5,
-    8+ 2, 8+ 4,   8+ 0, 8+ 6,
-
+    0, 1,   2, 3,
+    4, 5,   6, 7,
+    0, 2,   1, 3,
+    4, 6,   5, 7,
+    1, 7,   3, 5,
+    2, 4,   0, 6,
 };
-const unsigned vertices_count = 8+8;
+const unsigned vertices_count = 8;
 const unsigned indices_count = 36 + 24;
 const unsigned triangles_count = 12;
 const unsigned lines_count = 12;
@@ -86,9 +76,11 @@ struct Coord
 
 const Coord COORDS[] = {
     { 3.0f,     10.0f,      0.25f,      3.0f   }, // RHO
-    { M_PI/8,   M_PI*7/8,   M_PI/24,    M_PI/2 }, // THETA
-    { -1e37f,   1e37f,      M_PI/24,    0.0f   }  // PHI
+    { M_PI/8,   M_PI*7/8,   M_PI/24,    M_PI/3 }, // THETA
+    { -1e37f,   1e37f,      M_PI/24,    M_PI/6 }  // PHI
 };
+
+const unsigned side_edge_toggle = 12;
 
 const TCHAR SHADER_FILE[] = _T("shader.vsh");
 
@@ -201,7 +193,7 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
     );
 
     // Projective
-    float front = COORDS[RHO].min / 8.0f;
+    float front = COORDS[RHO].min * 0.35f;
     float back = COORDS[RHO].max * 2.0f;
     float a = back / (back - front);
     float b = - front * a;
@@ -218,7 +210,8 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
 
 void Render(Device *device,
             IDirect3DVertexBuffer9 *vertex_buffer, IDirect3DIndexBuffer9 *index_buffer,
-            IDirect3DVertexShader9 *vertex_shader, IDirect3DVertexDeclaration9 *vertex_declaration)
+            IDirect3DVertexShader9 *vertex_shader, IDirect3DVertexDeclaration9 *vertex_declaration,
+            bool render_sides)
 {
     OK( device->BeginScene() );
 
@@ -227,8 +220,10 @@ void Render(Device *device,
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertices_count, 0, triangles_count) );
-    OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, vertices_count, triangles_count*3, lines_count) );
+    if (render_sides)
+        OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertices_count, 0, triangles_count) );
+    else
+        OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, vertices_count, triangles_count*3, lines_count) );
 
     OK( device->EndScene() );
 
@@ -255,7 +250,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         wcex.cbSize = sizeof(WNDCLASSEX);
         wcex.style			= CS_HREDRAW | CS_VREDRAW;
         wcex.lpfnWndProc	= WndProc;
-        wcex.cbClsExtra		= sizeof(float)*3; // here would be stored view coordinates
+        wcex.cbClsExtra		= sizeof(float)*3+sizeof(LONG); // here would be stored view coordinates
         wcex.cbWndExtra		= 0;
         wcex.hInstance		= hInstance;
         wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
@@ -276,6 +271,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         SCF(hWnd, RHO, COORDS[RHO].initial);
         SCF(hWnd, THETA, COORDS[THETA].initial);
         SCF(hWnd, PHI, COORDS[PHI].initial);
+        SetClassLong(hWnd, side_edge_toggle, 1);
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
@@ -303,7 +299,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                     GCF(hWnd, THETA),
                     GCF(hWnd, PHI)
                 );
-                Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration);
+                Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration,
+                    static_cast<bool>(GetClassLong(hWnd, side_edge_toggle)));
             }
         }
     }
@@ -334,6 +331,11 @@ void DecCoord(HWND hWnd, SphericalCoords coord)
     SCF(hWnd, coord, max(var, COORDS[coord].min));
 }
 
+void ToggleSideEdge(HWND hWnd)
+{
+    SetClassLong(hWnd, side_edge_toggle, !GetClassLong(hWnd, side_edge_toggle));
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -341,12 +343,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_KEYDOWN:
         switch(wParam)
         {
-        case VK_UP:     DecCoord(hWnd, RHO);   break;
-        case VK_DOWN:   IncCoord(hWnd, RHO);   break;
-        case VK_PRIOR:  DecCoord(hWnd, THETA); break;
-        case VK_NEXT:   IncCoord(hWnd, THETA); break;
+        case VK_PRIOR:  DecCoord(hWnd, RHO);   break;
+        case VK_NEXT:   IncCoord(hWnd, RHO);   break;
+        case VK_UP:     DecCoord(hWnd, THETA); break;
+        case VK_DOWN:   IncCoord(hWnd, THETA); break;
         case VK_RIGHT:  DecCoord(hWnd, PHI);   break;
         case VK_LEFT:   IncCoord(hWnd, PHI);   break;
+        case VK_SPACE:  ToggleSideEdge(hWnd);  break;
         }
         break;
     case WM_DESTROY:
