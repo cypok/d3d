@@ -29,36 +29,6 @@ const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
     D3DDECL_END()
 };
 
-const VERTEX vertices[] = {
-    // colored cube sides
-    {  1.0f,  1.0f, -1.0f, WHITE   }, // 0
-    {  1.0f,  1.0f,  1.0f, CYAN    }, // 1
-    { -1.0f,  1.0f, -1.0f, MAGENTA }, // 2
-    { -1.0f,  1.0f,  1.0f, BLUE    }, // 3
-    { -1.0f, -1.0f, -1.0f, RED     }, // 4
-    { -1.0f, -1.0f,  1.0f, BLACK   }, // 5
-    {  1.0f, -1.0f, -1.0f, YELLOW  }, // 6
-    {  1.0f, -1.0f,  1.0f, GREEN   }, // 7
-};
-const DWORD indices[] = {
-    0, 2, 3,    0, 3, 1, // +y
-    2, 4, 5,    2, 5, 3, // -x
-    4, 6, 7,    4, 7, 5, // -y
-    6, 0, 1,    6, 1, 7, // +x
-    1, 3, 5,    1, 5, 7, // +z
-    4, 2, 0,    4, 0, 6, // -z
-    0, 1,   2, 3,
-    4, 5,   6, 7,
-    0, 2,   1, 3,
-    4, 6,   5, 7,
-    1, 7,   3, 5,
-    2, 4,   0, 6,
-};
-const unsigned vertices_count = 8;
-const unsigned indices_count = 36 + 24;
-const unsigned triangles_count = 12;
-const unsigned lines_count = 12;
-
 enum SphericalCoords
 {
     RHO = 0,
@@ -81,7 +51,7 @@ const Coord COORDS[] = {
     { -1e37f,       1e37f,          D3DX_PI/24,     D3DX_PI/6 }  // PHI
 };
 
-const unsigned side_edge_toggle = 12;
+const unsigned time_value_index = 12;
 
 const TCHAR SHADER_FILE[] = _T("shader.vsh");
 
@@ -105,6 +75,14 @@ float GCF(HWND hWnd, SphericalCoords coord) // GetClassFloat
 void SCF(HWND hWnd, SphericalCoords coord, float value) // SetClassFloat
 {
     SetClassLong(hWnd, 4*coord, *(LONG*)(&value));
+}
+LONG GCTime(HWND hWnd)
+{
+    return GetClassLong(hWnd, time_value_index);
+}
+void IncCTime(HWND hWnd)
+{
+    SetClassLong(hWnd, time_value_index, 1+GetClassLong(hWnd, time_value_index));
 }
 
 void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
@@ -138,20 +116,20 @@ void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIn
 {
     // initializing vertex and index buffers
 
-    unsigned v_size = vertices_count*sizeof(vertices[0]);
-    unsigned i_size = indices_count*sizeof(indices[0]);
-
-    OK( device->CreateVertexBuffer(v_size, 0, 0, D3DPOOL_MANAGED, vertex_buffer, NULL) );
-    OK( device->CreateIndexBuffer(i_size, 0, D3DFMT_INDEX32, D3DPOOL_MANAGED, index_buffer, NULL) );
-
-    void * buffer = NULL;
-    OK( (*vertex_buffer)->Lock(0, 0, &buffer, 0) );
-    memcpy(buffer, vertices, v_size);
-    (*vertex_buffer)->Unlock();
-
-    OK( (*index_buffer)->Lock(0, 0, &buffer, 0) );
-    memcpy(buffer, indices, i_size);
-    (*index_buffer)->Unlock();
+//    unsigned v_size = vertices_count*sizeof(vertices[0]);
+//    unsigned i_size = indices_count*sizeof(indices[0]);
+//
+//    OK( device->CreateVertexBuffer(v_size, 0, 0, D3DPOOL_MANAGED, vertex_buffer, NULL) );
+//    OK( device->CreateIndexBuffer(i_size, 0, D3DFMT_INDEX32, D3DPOOL_MANAGED, index_buffer, NULL) );
+//
+//    void * buffer = NULL;
+//    OK( (*vertex_buffer)->Lock(0, 0, &buffer, 0) );
+//    memcpy(buffer, vertices, v_size);
+//    (*vertex_buffer)->Unlock();
+//
+//    OK( (*index_buffer)->Lock(0, 0, &buffer, 0) );
+//    memcpy(buffer, indices, i_size);
+//    (*index_buffer)->Unlock();
 }
 
 void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_declaration, IDirect3DVertexShader9 **vertex_shader)
@@ -211,20 +189,16 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
 
 void Render(Device *device,
             IDirect3DVertexBuffer9 *vertex_buffer, IDirect3DIndexBuffer9 *index_buffer,
-            IDirect3DVertexShader9 *vertex_shader, IDirect3DVertexDeclaration9 *vertex_declaration,
-            int render_sides)
+            IDirect3DVertexShader9 *vertex_shader, IDirect3DVertexDeclaration9 *vertex_declaration)
 {
     OK( device->BeginScene() );
 
     OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, GRAY, 1.0f, 0 ) );
-    OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof(VERTEX)) );
-    OK( device->SetIndices(index_buffer) );
+    //OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof(VERTEX)) );
+    //OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    if (render_sides)
-        OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertices_count, 0, triangles_count) );
-    else
-        OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, vertices_count, triangles_count*3, lines_count) );
+    //OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, vertices_count, triangles_count*3, lines_count) );
 
     OK( device->EndScene() );
 
@@ -272,11 +246,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         SCF(hWnd, RHO, COORDS[RHO].initial);
         SCF(hWnd, THETA, COORDS[THETA].initial);
         SCF(hWnd, PHI, COORDS[PHI].initial);
-        SetClassLong(hWnd, side_edge_toggle, 1);
+        SetClassLong(hWnd, time_value_index, 0);
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        InitVIB(device, &vertex_buffer, &index_buffer);
+        //InitVIB(device, &vertex_buffer, &index_buffer);
         InitVDeclAndShader(device, &vertex_declaration, &vertex_shader);
 
         // SHOWING WINDOW
@@ -300,8 +274,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                     GCF(hWnd, THETA),
                     GCF(hWnd, PHI)
                 );
-                Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration,
-                    static_cast<int>(GetClassLong(hWnd, side_edge_toggle)));
+                Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration);
             }
         }
     }
@@ -332,11 +305,6 @@ void DecCoord(HWND hWnd, SphericalCoords coord)
     SCF(hWnd, coord, max(var, COORDS[coord].min));
 }
 
-void ToggleSideEdge(HWND hWnd)
-{
-    SetClassLong(hWnd, side_edge_toggle, !GetClassLong(hWnd, side_edge_toggle));
-}
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -350,9 +318,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case VK_DOWN:   IncCoord(hWnd, THETA); break;
         case VK_RIGHT:  DecCoord(hWnd, PHI);   break;
         case VK_LEFT:   IncCoord(hWnd, PHI);   break;
-        case VK_SPACE:  ToggleSideEdge(hWnd);  break;
         }
         break;
+
+    case WM_TIMER:      IncCTime(hWnd);        break;
+
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
