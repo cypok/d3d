@@ -206,11 +206,9 @@ void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIn
     OK( device->CreateVertexBuffer(v_size, 0, 0, D3DPOOL_MANAGED, vertex_buffer, NULL) );
     OK( device->CreateIndexBuffer(i_size, 0, D3DFMT_INDEX32, D3DPOOL_MANAGED, index_buffer, NULL) );
 
-    void * buffer = NULL;
-    OK( (*vertex_buffer)->Lock(0, 0, &buffer, 0) );
-    memcpy(buffer, vb_initial, v_size);
-    (*vertex_buffer)->Unlock();
+    // We would set vertex_buffer later
 
+    void * buffer = NULL;
     OK( (*index_buffer)->Lock(0, 0, &buffer, 0) );
     memcpy(buffer, ib, i_size);
     (*index_buffer)->Unlock();
@@ -227,6 +225,30 @@ void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_dec
     OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), vertex_shader) );
 
     RELEASE_IFACE(code);
+}
+
+void AnimateVB(IDirect3DVertexBuffer9 *vertex_buffer, VERTEX *vb_initial, VERTEX *vb_final, LONG time)
+{
+    static bool first = true;
+    static VERTEX vb[vertices_count];
+    unsigned v_size = vertices_count*sizeof(VERTEX);
+    void * buffer = NULL;
+
+    if (first)
+    {
+        // set colors
+        memcpy(vb, vb_initial, v_size);
+        first = false;
+    }
+
+    // time -> 0..1
+    float t = (1.0 + sinf(D3DXToRadian( 4.0*static_cast<float>(time%90) )))/2;
+    for (int i = 0; i < vertices_count; ++i)
+        vb[i].v = (vb_initial[i].v*(1.0-t) + vb_final[i].v*t)/2;
+
+    OK( vertex_buffer->Lock(0, 0, &buffer, 0) );
+    memcpy(buffer, vb, v_size);
+    vertex_buffer->Unlock();
 }
 
 void CalcMatrix(Device *device, float rho, float tetha, float phi)
@@ -345,6 +367,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         ShowWindow(hWnd, nCmdShow);
         UpdateWindow(hWnd);
 
+        // CREATE TIMER FOR ANIMATION
+        SetTimer(hWnd, 0, 75, NULL);
 
         // MAIN MESSAGE LOOP:
         MSG msg = {0};
@@ -357,6 +381,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             }
             else
             {
+                AnimateVB(vertex_buffer, vb_initial, vb_final, GCTime(hWnd));
                 CalcMatrix(device,
                     GCF(hWnd, RHO),
                     GCF(hWnd, THETA),
