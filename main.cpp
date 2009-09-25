@@ -21,8 +21,6 @@ struct VERTEX
     D3DXVECTOR3 v;
     DWORD color;
 };
-typedef std::vector<VERTEX> VERTICES;
-typedef std::vector<DWORD> INDICES;
 
 const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 {
@@ -31,7 +29,9 @@ const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
     D3DDECL_END()
 };
 
-const unsigned TESSELATE_LEVEL = 2;
+const unsigned TESSELATE_LEVEL = 2; // <6
+const unsigned vertices_count = 6 + 8 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's math
+const unsigned indices_count = 24 + 16 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's too
 
 const VERTEX initial_pyramid[] = {
     { D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ),    RED   },
@@ -42,6 +42,7 @@ const VERTEX initial_pyramid[] = {
     { D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ),    WHITE },
 };
 const unsigned initial_pyramid_vcount = sizeof(initial_pyramid)/sizeof(initial_pyramid[0]);
+const float sphera_radius = sqrtf(2.0);
 
 enum SphericalCoords
 {
@@ -103,29 +104,37 @@ DWORD RandColor()
     return D3DCOLOR_XRGB(rand()%256, rand()%256, rand()%256);
 }
 
-void Tesselate(unsigned i1, unsigned i2, unsigned i3, VERTICES *vb, INDICES *ib, int level)
+void Tesselate(unsigned i1, unsigned i2, unsigned i3,
+               VERTEX *vb, unsigned *cv,
+               DWORD *ib, unsigned *ci,
+               int level)
 {
     if (level > TESSELATE_LEVEL)
         return;
 
-    unsigned i = vb->size();
-    VERTEX v1 = {  ( (*vb)[i1].v + (*vb)[i2].v )/2, RandColor() };
-    VERTEX v2 = {  ( (*vb)[i2].v + (*vb)[i3].v )/2, RandColor() };
-    VERTEX v3 = {  ( (*vb)[i3].v + (*vb)[i1].v )/2, RandColor() };
-    vb->push_back(v1);
-    vb->push_back(v2);
-    vb->push_back(v3);
-#define PB(x, y) ib->push_back(x); ib->push_back(y);
-    PB(i, i+1);
-    PB(i+1, i+2);
-    PB(i+2, i);
-#undef PB
+    unsigned j = *cv;
+    // set vertices
+    vb[ j ].v = ( vb[i1].v + vb[i2].v )/2;
+    vb[j+1].v = ( vb[i2].v + vb[i3].v )/2;
+    vb[j+2].v = ( vb[i3].v + vb[i1].v )/2;
+    vb[ j ].color = RandColor();
+    vb[j+1].color = RandColor();
+    vb[j+2].color = RandColor();
+
+    // set indices
+#define add2ib(x, y) ib[(*ci)++] = x; ib[(*ci)++] = y;
+    add2ib(j,   j+1);
+    add2ib(j+1, j+2);
+    add2ib(j+2, j  );
+#undef add2ib
 
     ++level;
-    Tesselate(i1, i, i+2,   vb, ib, level);
-    Tesselate(i, i2, i+1,   vb, ib, level);
-    Tesselate(i+1, i+2, i,  vb, ib, level);
-    Tesselate(i+2, i+1, i3, vb, ib, level);
+    *cv = j+3;
+    // next level
+    Tesselate(i1,  j,  j+2,  vb, cv, ib, ci, level);
+    Tesselate(j,   i2,  j+1, vb, cv, ib, ci, level);
+    Tesselate(j+1, j+2, j,   vb, cv, ib, ci, level);
+    Tesselate(j+2, j+1, i3,  vb, cv, ib, ci, level);
 }
 
 void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
@@ -156,46 +165,54 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
 }
 
 void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIndexBuffer9 **index_buffer,
-             VERTICES *vb_initial, VERTICES *vb_final, INDICES *ib)
+             VERTEX *vb_initial, VERTEX *vb_final, DWORD *ib)
 {
+    unsigned cv = 0; // current index in vb
+    unsigned ci = 0; // current index in ib
+
+    // copy initial vertices
+    memcpy(vb_initial, initial_pyramid, initial_pyramid_vcount * sizeof(VERTEX));
+    cv = 6;
+
+    // set initial indices
+#define add2ib(x, y) ib[ci++] = x; ib[ci++] = y;
+    add2ib(0, 1);   add2ib(1, 2);
+    add2ib(2, 3);   add2ib(3, 0);
+    add2ib(0, 4);   add2ib(1, 4);
+    add2ib(2, 4);   add2ib(3, 4);
+    add2ib(0, 5);   add2ib(1, 5);
+    add2ib(2, 5);   add2ib(3, 5);
+#undef add2ib
+
+    // RUN!
+    Tesselate(0, 3, 4, vb_initial, &cv, ib, &ci, 1);
+    Tesselate(3, 2, 4, vb_initial, &cv, ib, &ci, 1);
+    Tesselate(2, 1, 4, vb_initial, &cv, ib, &ci, 1);
+    Tesselate(1, 0, 4, vb_initial, &cv, ib, &ci, 1);
+    Tesselate(0, 1, 5, vb_initial, &cv, ib, &ci, 1);
+    Tesselate(1, 2, 5, vb_initial, &cv, ib, &ci, 1);
+    Tesselate(2, 3, 5, vb_initial, &cv, ib, &ci, 1);
+    Tesselate(3, 0, 5, vb_initial, &cv, ib, &ci, 1);
+
+    // generate final state of vb
+    unsigned v_size = vertices_count*sizeof(VERTEX);
+    unsigned i_size = indices_count*sizeof(DWORD);
+
+    memcpy(vb_final, vb_initial, v_size);
+    for(int i = 0; i < vertices_count; ++i)
+        vb_final[i].v *= (sphera_radius / D3DXVec3Length(&vb_final[i].v));
+
     // initializing vertex and index buffers
-    
-    for (int i = 0; i < initial_pyramid_vcount; ++i)
-        vb_initial->push_back(initial_pyramid[i]);
-
-#define PB(x, y) ib->push_back(x); ib->push_back(y);
-    PB(0, 1);   PB(1, 2);
-    PB(2, 3);   PB(3, 0);
-    PB(0, 4);   PB(1, 4);
-    PB(2, 4);   PB(3, 4);
-    PB(0, 5);   PB(1, 5);
-    PB(2, 5);   PB(3, 5);
-#undef PB
-
-    Tesselate(0, 3, 4, vb_initial, ib, 1);
-    Tesselate(3, 2, 4, vb_initial, ib, 1);
-    Tesselate(2, 1, 4, vb_initial, ib, 1);
-    Tesselate(1, 0, 4, vb_initial, ib, 1);
-    Tesselate(0, 1, 5, vb_initial, ib, 1);
-    Tesselate(1, 2, 5, vb_initial, ib, 1);
-    Tesselate(2, 3, 5, vb_initial, ib, 1);
-    Tesselate(3, 0, 5, vb_initial, ib, 1);
-
-    unsigned v_size = vb_initial->size()*sizeof(VERTEX);
-    unsigned i_size = ib->size()*sizeof(DWORD);
-
     OK( device->CreateVertexBuffer(v_size, 0, 0, D3DPOOL_MANAGED, vertex_buffer, NULL) );
     OK( device->CreateIndexBuffer(i_size, 0, D3DFMT_INDEX32, D3DPOOL_MANAGED, index_buffer, NULL) );
 
     void * buffer = NULL;
     OK( (*vertex_buffer)->Lock(0, 0, &buffer, 0) );
-    for (int i = 0; i < vb_initial->size(); ++i)
-        memcpy((char*)buffer + i*sizeof(VERTEX), &(*vb_initial)[i], sizeof(VERTEX));
+    memcpy(buffer, vb_initial, v_size);
     (*vertex_buffer)->Unlock();
 
     OK( (*index_buffer)->Lock(0, 0, &buffer, 0) );
-    for (int i = 0; i < ib->size(); ++i)
-        memcpy((char*)buffer + i*sizeof(DWORD), &(*ib)[i], sizeof(DWORD));
+    memcpy(buffer, ib, i_size);
     (*index_buffer)->Unlock();
 }
 
@@ -265,7 +282,7 @@ void Render(Device *device,
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, 126, 0, 132) );
+    OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, vertices_count, 0, indices_count/2) );
 
     OK( device->EndScene() );
 
@@ -281,9 +298,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     IDirect3DVertexShader9 *vertex_shader = NULL;
     IDirect3DVertexDeclaration9 *vertex_declaration = NULL;
 
-    VERTICES vb_initial;
-    VERTICES vb_final;
-    INDICES ib;
+    VERTEX vb_initial[vertices_count];
+    VERTEX vb_final[vertices_count];
+    DWORD ib[indices_count];
 
     MSG msg = {0};
     try
@@ -321,7 +338,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        InitVIB(device, &vertex_buffer, &index_buffer, &vb_initial, &vb_final, &ib);
+        InitVIB(device, &vertex_buffer, &index_buffer, vb_initial, vb_final, ib);
         InitVDeclAndShader(device, &vertex_declaration, &vertex_shader);
 
         // SHOWING WINDOW
