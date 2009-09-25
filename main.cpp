@@ -30,14 +30,24 @@ const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 };
 
 const VERTEX vertices[] = {
-    {  1.0f,  1.0f,  -1.0f, WHITE   }, // 0
-    {  1.0f,  1.0f,   1.0f, CYAN    }, // 1
-    { -1.0f,  1.0f,  -1.0f, MAGENTA }, // 2
-    { -1.0f,  1.0f,   1.0f, BLUE    }, // 3
-    { -1.0f, -1.0f,  -1.0f, RED     }, // 4
-    { -1.0f, -1.0f,   1.0f, BLACK   }, // 5
-    {  1.0f, -1.0f,  -1.0f, YELLOW  }, // 6
-    {  1.0f, -1.0f,   1.0f, GREEN   }, // 7
+    // colored cube sides
+    {  1.0f,  1.0f, -1.0f, WHITE   }, // 0
+    {  1.0f,  1.0f,  1.0f, CYAN    }, // 1
+    { -1.0f,  1.0f, -1.0f, MAGENTA }, // 2
+    { -1.0f,  1.0f,  1.0f, BLUE    }, // 3
+    { -1.0f, -1.0f, -1.0f, RED     }, // 4
+    { -1.0f, -1.0f,  1.0f, BLACK   }, // 5
+    {  1.0f, -1.0f, -1.0f, YELLOW  }, // 6
+    {  1.0f, -1.0f,  1.0f, GREEN   }, // 7
+    // colored cube edges
+    {  1.0f,  1.0f, -1.0f, BLACK   }, // 8+0
+    {  1.0f,  1.0f,  1.0f, RED     }, // 8+1
+    { -1.0f,  1.0f, -1.0f, GREEN   }, // 8+2
+    { -1.0f,  1.0f,  1.0f, YELLOW  }, // 8+3
+    { -1.0f, -1.0f, -1.0f, CYAN    }, // 8+4
+    { -1.0f, -1.0f,  1.0f, WHITE   }, // 8+5
+    {  1.0f, -1.0f, -1.0f, BLUE    }, // 8+6
+    {  1.0f, -1.0f,  1.0f, MAGENTA }, // 8+7
 };
 const DWORD indices[] = {
     0, 2, 3,    0, 3, 1, // +y
@@ -46,9 +56,18 @@ const DWORD indices[] = {
     6, 0, 1,    6, 1, 7, // +x
     1, 3, 5,    1, 5, 7, // +z
     4, 2, 0,    4, 0, 6, // -z
+    8+ 0, 8+ 1,   8+ 2, 8+ 3,
+    8+ 4, 8+ 5,   8+ 6, 8+ 7,
+    8+ 0, 8+ 2,   8+ 1, 8+ 3,
+    8+ 4, 8+ 6,   8+ 5, 8+ 7,
+    8+ 1, 8+ 7,   8+ 3, 8+ 5,
+    8+ 2, 8+ 4,   8+ 0, 8+ 6,
+
 };
-const unsigned vertices_count = 8;
-const unsigned indices_count = 36;
+const unsigned vertices_count = 8+8;
+const unsigned indices_count = 36 + 24;
+const unsigned triangles_count = 12;
+const unsigned lines_count = 12;
 
 enum SphericCoords
 {
@@ -66,12 +85,12 @@ struct Coord
 };
 
 const Coord COORDS[] = {
-    { 1.0f,     10.0f,      0.25f,      5.0f      }, // RHO
-    { 0.0f,     D3DX_PI,    D3DX_PI/24, D3DX_PI/2 }, // THETA
-    { -1e37f,   1e37f,      D3DX_PI/24, 0.0f      }  // PHI
+    { 1.0f,     10.0f,      0.25f,      5.0f   }, // RHO
+    { M_PI/8,   M_PI*7/8,   M_PI/24,    M_PI/2 }, // THETA
+    { -1e37f,   1e37f,      M_PI/24,    0.0f   }  // PHI
 };
 
-const wchar_t SHADER_FILE[] = _T("shader.vsh");
+const TCHAR SHADER_FILE[] = _T("shader.vsh");
 
 const int WINDOW_WIDTH = 600;
 const int WINDOW_HEIGHT = 600;
@@ -156,15 +175,35 @@ void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_dec
 }
 
 void CalcMatrix(Device *device, float rho, float tetha, float phi)
-{
-    FLOAT matrix[] = {
-         0.5f,  0.0f,  0.0f,  0.0f,
-         0.0f,  0.5f,  0.0f,  0.0f,
-         0.0f,  0.0f,  0.5f,  0.0f,
-         0.0f,  0.0f,  0.0f,  1.0f,
-    };
+{   
+    // View Matrix
+    D3DXVECTOR3 eye(
+        rho*sin(tetha)*cos(phi),
+        rho*sin(tetha)*sin(phi),
+        rho*cos(tetha)
+    );
+    D3DXVECTOR3 at(0, 0, 0);
+    D3DXVECTOR3 up(0, 0, 1);
 
-    OK( device->SetVertexShaderConstantF(0, matrix, 4) );
+    D3DXVECTOR3 z = at - eye;
+    D3DXVec3Normalize(&z, &z);
+    D3DXVECTOR3 x;
+    D3DXVec3Cross(&x, &up, &z);
+    D3DXVec3Normalize(&x, &x);
+    D3DXVECTOR3 y;
+    D3DXVec3Cross(&y, &z, &x);
+    
+    D3DXMATRIX viewMatrix(
+        x.x, x.y, x.z, -D3DXVec3Dot(&eye, &x),
+        y.x, y.y, y.z, -D3DXVec3Dot(&eye, &y),
+        z.x, z.y, z.z, -D3DXVec3Dot(&eye, &z),
+        0,   0,   0,   1
+    );
+
+    // Projective
+    // ...
+
+    OK( device->SetVertexShaderConstantF(0, viewMatrix, 4) );
 }
 
 void Render(Device *device,
@@ -173,12 +212,13 @@ void Render(Device *device,
 {
     OK( device->BeginScene() );
 
-    OK( device->Clear( 0, NULL, D3DCLEAR_TARGET, GRAY, 1.0f, 0 ) );
+    OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, GRAY, 1.0f, 0 ) );
     OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof(VERTEX)) );
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertices_count, 0, indices_count/3) );
+    OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertices_count, 0, triangles_count) );
+    OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, vertices_count, triangles_count*3, lines_count) );
 
     OK( device->EndScene() );
 
