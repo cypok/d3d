@@ -85,8 +85,8 @@ const unsigned side_edge_toggle = 12;
 
 const TCHAR SHADER_FILE[] = _T("shader.vsh");
 
-const int WINDOW_WIDTH = 600;
-const int WINDOW_HEIGHT = 600;
+const int WINDOW_WIDTH = 700;
+const int WINDOW_HEIGHT = 700;
 
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -263,7 +263,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         RegisterClassEx(&wcex);
 
         HWND hWnd;
-        if (NULL == (hWnd = CreateWindow(window_class_name, window_title, WS_OVERLAPPEDWINDOW,
+        if (NULL == (hWnd = CreateWindow(window_class_name, window_title, WS_CAPTION | WS_SYSMENU,
                                          CW_USEDEFAULT, 0, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hInstance, NULL)))
         {
             throw std::exception();
