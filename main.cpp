@@ -75,9 +75,10 @@ struct Coord
 };
 
 const Coord COORDS[] = {
-    { 3.0f,     10.0f,      0.25f,      3.0f   }, // RHO
-    { M_PI/8,   M_PI*7/8,   M_PI/24,    M_PI/3 }, // THETA
-    { -1e37f,   1e37f,      M_PI/24,    M_PI/6 }  // PHI
+    /* MIN */       /* MAX */       /* DELTA */     /* INITIAL */
+    { 3.0f,         10.0f,          0.25f,          3.0f      }, // RHO
+    { D3DX_PI/8,    D3DX_PI*7/8,    D3DX_PI/24,     D3DX_PI/3 }, // THETA
+    { -1e37f,       1e37f,          D3DX_PI/24,     D3DX_PI/6 }  // PHI
 };
 
 const unsigned side_edge_toggle = 12;
@@ -130,7 +131,7 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
                                     device) );
 
     //(*device)->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );
-    (*device)->SetRenderState( D3DRS_ZENABLE, D3DZB_TRUE );
+    //(*device)->SetRenderState( D3DRS_ZENABLE, D3DZB_TRUE );
 }
 
 void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIndexBuffer9 **index_buffer)
@@ -211,7 +212,7 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
 void Render(Device *device,
             IDirect3DVertexBuffer9 *vertex_buffer, IDirect3DIndexBuffer9 *index_buffer,
             IDirect3DVertexShader9 *vertex_shader, IDirect3DVertexDeclaration9 *vertex_declaration,
-            bool render_sides)
+            int render_sides)
 {
     OK( device->BeginScene() );
 
@@ -300,7 +301,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                     GCF(hWnd, PHI)
                 );
                 Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration,
-                    static_cast<bool>(GetClassLong(hWnd, side_edge_toggle)));
+                    static_cast<int>(GetClassLong(hWnd, side_edge_toggle)));
             }
         }
     }
