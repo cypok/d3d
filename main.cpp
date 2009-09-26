@@ -124,7 +124,7 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
     params.AutoDepthStencilFormat = D3DFMT_D16;
 
     OK( (*d3d)->CreateDevice(D3DADAPTER_DEFAULT,
-                                    D3DDEVTYPE_HAL,
+                                    D3DDEVTYPE_REF,
                                     hWnd,
                                     D3DCREATE_SOFTWARE_VERTEXPROCESSING,
                                     &params,
