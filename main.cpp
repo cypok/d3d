@@ -31,15 +31,15 @@ const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 
 const unsigned TESSELATE_LEVEL = 2; // <6
 const unsigned vertices_count = 6 + 8 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's math
-const unsigned indices_count = 24 + 16 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's too
+const unsigned indices_count = 144 * (1 << 2*(TESSELATE_LEVEL-1)); // it's too
 
 const VERTEX initial_pyramid[] = {
-    { D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ),    RED   },
-    { D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ),    GREEN },
-    { D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ),    RED   },
-    { D3DXVECTOR3(  1.0f, -1.0f,  0.0f       ),    GREEN },
-    { D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ),    BLACK },
-    { D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ),    WHITE },
+    { D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ),    RED     },
+    { D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ),    MAGENTA },
+    { D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ),    CYAN    },
+    { D3DXVECTOR3(  1.0f, -1.0f,  0.0f       ),    GREEN   },
+    { D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ),    BLUE    },
+    { D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ),    YELLOW  },
 };
 const unsigned initial_pyramid_vcount = sizeof(initial_pyramid)/sizeof(initial_pyramid[0]);
 const float sphera_radius = sqrtf(2.0);
@@ -122,11 +122,22 @@ void Tesselate(unsigned i1, unsigned i2, unsigned i3,
     vb[j+2].color = RandColor();
 
     // set indices
+    if (level == TESSELATE_LEVEL)
+    {
 #define add2ib(x, y) ib[(*ci)++] = x; ib[(*ci)++] = y;
-    add2ib(j,   j+1);
-    add2ib(j+1, j+2);
-    add2ib(j+2, j  );
+        add2ib(i1, j);
+        add2ib(j, j+2);
+        add2ib(j+2, i1);
+
+        add2ib(j, i2);
+        add2ib(i2, j+1);
+        add2ib(j+1, j);
+
+        add2ib(j+2, j+1);
+        add2ib(j+1, i3);
+        add2ib(i3, j+2);
 #undef add2ib
+    }
 
     ++level;
     *cv = j+3;
@@ -173,16 +184,6 @@ void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIn
     // copy initial vertices
     memcpy(vb_initial, initial_pyramid, initial_pyramid_vcount * sizeof(VERTEX));
     cv = 6;
-
-    // set initial indices
-#define add2ib(x, y) ib[ci++] = x; ib[ci++] = y;
-    add2ib(0, 1);   add2ib(1, 2);
-    add2ib(2, 3);   add2ib(3, 0);
-    add2ib(0, 4);   add2ib(1, 4);
-    add2ib(2, 4);   add2ib(3, 4);
-    add2ib(0, 5);   add2ib(1, 5);
-    add2ib(2, 5);   add2ib(3, 5);
-#undef add2ib
 
     // RUN!
     Tesselate(0, 3, 4, vb_initial, &cv, ib, &ci, 1);
@@ -242,9 +243,9 @@ void AnimateVB(IDirect3DVertexBuffer9 *vertex_buffer, VERTEX *vb_initial, VERTEX
     }
 
     // time -> 0..1
-    float t = (1.0 + sinf(D3DXToRadian( 4.0*static_cast<float>(time%90) )))/2;
+    float t = (1.0f + sinf(D3DXToRadian( 4.0f*static_cast<float>(time%90) )))/2;
     for (int i = 0; i < vertices_count; ++i)
-        vb[i].v = (vb_initial[i].v*(1.0-t) + vb_final[i].v*t)/2;
+        vb[i].v = (vb_initial[i].v*(1.0f-t) + vb_final[i].v*t)/2;
 
     OK( vertex_buffer->Lock(0, 0, &buffer, 0) );
     memcpy(buffer, vb, v_size);
@@ -368,7 +369,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         UpdateWindow(hWnd);
 
         // CREATE TIMER FOR ANIMATION
-        SetTimer(hWnd, 0, 75, NULL);
+        SetTimer(hWnd, 0, 50, NULL);
 
         // MAIN MESSAGE LOOP:
         MSG msg = {0};
