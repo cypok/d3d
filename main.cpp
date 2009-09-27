@@ -29,7 +29,7 @@ const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
     D3DDECL_END()
 };
 
-const unsigned TESSELATE_LEVEL = 2; // <6
+const unsigned TESSELATE_LEVEL = 3; // <6
 const unsigned vertices_count = 6 + 8 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's math
 const unsigned indices_count = 144 * (1 << 2*(TESSELATE_LEVEL-1)); // it's too
 
@@ -38,8 +38,8 @@ const VERTEX initial_pyramid[] = {
     { D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ),    MAGENTA },
     { D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ),    CYAN    },
     { D3DXVECTOR3(  1.0f, -1.0f,  0.0f       ),    GREEN   },
-    { D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ),    BLUE    },
-    { D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ),    YELLOW  },
+    { D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ),    WHITE   },
+    { D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ),    BLACK   },
 };
 const unsigned initial_pyramid_vcount = sizeof(initial_pyramid)/sizeof(initial_pyramid[0]);
 const float sphera_radius = sqrtf(2.0);
@@ -99,6 +99,14 @@ void IncCTime(HWND hWnd)
 {
     SetClassLong(hWnd, time_value_index, 1+GetClassLong(hWnd, time_value_index));
 }
+DWORD MixColors(D3DCOLOR c1, D3DCOLOR c2)
+{
+    return D3DCOLOR_XRGB(
+                ((c1 & 0xff0000) + (c2 & 0xff0000)) >> 17,
+                ((c1 & 0xff00)   + (c2 & 0xff00)) >> 9,
+                ((c1 & 0xff)     + (c2 & 0xff)) >> 1
+           );
+}
 DWORD RandColor()
 {
     return D3DCOLOR_XRGB(rand()%256, rand()%256, rand()%256);
@@ -117,9 +125,9 @@ void Tesselate(unsigned i1, unsigned i2, unsigned i3,
     vb[ j ].v = ( vb[i1].v + vb[i2].v )/2;
     vb[j+1].v = ( vb[i2].v + vb[i3].v )/2;
     vb[j+2].v = ( vb[i3].v + vb[i1].v )/2;
-    vb[ j ].color = RandColor();
-    vb[j+1].color = RandColor();
-    vb[j+2].color = RandColor();
+    vb[ j ].color = MixColors(vb[i1].color, vb[i2].color);
+    vb[j+1].color = MixColors(vb[i2].color, vb[i3].color);
+    vb[j+2].color = MixColors(vb[i3].color, vb[i1].color);
 
     // set indices
     if (level == TESSELATE_LEVEL)
