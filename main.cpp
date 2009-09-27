@@ -4,7 +4,7 @@
 typedef IDirect3DDevice9 Device;
 #define RELEASE_IFACE(x) if(x!=NULL) x->Release();
 #define COLOR_DEFINE(name, r, g, b) \
-	const DWORD name = D3DCOLOR_XRGB( (r), (g), (b) );
+    const DWORD name = D3DCOLOR_XRGB( (r), (g), (b) );
 
 COLOR_DEFINE( BLACK,       0,   0,   0 )
 COLOR_DEFINE( BLUE,        0,   0, 255 )
@@ -88,7 +88,7 @@ const TCHAR SHADER_FILE[] = _T("shader.vsh");
 const int WINDOW_WIDTH = 700;
 const int WINDOW_HEIGHT = 700;
 
-LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 // HELPERS
 void OK(HRESULT result)
@@ -248,18 +248,18 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // REGISTERING AND CREATING WINDOW
         WNDCLASSEX wcex;
-        wcex.cbSize = sizeof(WNDCLASSEX);
-        wcex.style			= CS_HREDRAW | CS_VREDRAW;
-        wcex.lpfnWndProc	= WndProc;
-        wcex.cbClsExtra		= sizeof(float)*3+sizeof(LONG); // here would be stored view coordinates
-        wcex.cbWndExtra		= 0;
-        wcex.hInstance		= hInstance;
-        wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
-        wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-        wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-        wcex.lpszMenuName	= 0;
-        wcex.lpszClassName	= window_class_name;
-        wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+        wcex.cbSize         = sizeof(WNDCLASSEX);
+        wcex.style          = CS_HREDRAW | CS_VREDRAW;
+        wcex.lpfnWndProc    = WndProc;
+        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG); // here would be stored view coordinates
+        wcex.cbWndExtra     = 0;
+        wcex.hInstance      = hInstance;
+        wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
+        wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
+        wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+        wcex.lpszMenuName   = 0;
+        wcex.lpszClassName  = window_class_name;
+        wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
         RegisterClassEx(&wcex);
 
         HWND hWnd;
