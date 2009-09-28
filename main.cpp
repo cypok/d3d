@@ -272,7 +272,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         SCF(hWnd, RHO, COORDS[RHO].initial);
         SCF(hWnd, THETA, COORDS[THETA].initial);
         SCF(hWnd, PHI, COORDS[PHI].initial);
-        SetClassLong(hWnd, side_edge_toggle, 1);
+        SetClassLong(hWnd, side_edge_toggle, 0);
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
