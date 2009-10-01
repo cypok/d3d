@@ -36,6 +36,11 @@ const RS RENDER_STATES[] = {
     { D3DRS_CULLMODE, D3DCULL_NONE },
 };
 
+const int WINDOW_WIDTH = 700;
+const int WINDOW_HEIGHT = 700;
+
+const float SPEED = 20.0f;
+
 const unsigned TESSELATE_LEVEL = 3; // <6
 const bool TESSELATE_RANDOM_COLORS = false;
 const unsigned VERTICES_COUNT = 6 + 8 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's math
@@ -51,6 +56,12 @@ const Vertex INITIAL_PYRAMID[] = {
 };
 const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
 const float SPHERA_RADIUS = sqrtf(2.0);
+
+enum {
+    TIME_REG = 0,
+    RADIUS_REG = 1,
+    MATRIX_REG = 2
+};
 
 unsigned WORLD_DIMENSION = 3;
 
@@ -71,7 +82,7 @@ struct Coord
 
 const Coord COORDS[] = {
     /* MIN */       /* MAX */       /* DELTA */     /* INITIAL */
-    { 3.0f,         10.0f,          0.25f,          3.0f      }, // RHO
+    { 3.0f,         10.0f,          0.25f,          6.0f      }, // RHO
     { D3DX_PI/8,    D3DX_PI*7/8,    D3DX_PI/24,     D3DX_PI*11/24 }, // THETA
     { -1e37f,       1e37f,          D3DX_PI/24,     0.0f      }  // PHI
 };
@@ -79,9 +90,6 @@ const Coord COORDS[] = {
 const unsigned TIME_VALUE_INDEX = 12;
 
 const TCHAR SHADER_FILE[] = _T("shader.vsh");
-
-const int WINDOW_WIDTH = 700;
-const int WINDOW_HEIGHT = 700;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -213,40 +221,38 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
 }
 
 void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIndexBuffer9 **index_buffer,
-             Vertex *vb_initial, Vertex *vb_final, DWORD *ib)
+             Vertex *vb, DWORD *ib)
 {
     unsigned cv = 0; // current index in vb
     unsigned ci = 0; // current index in ib
 
     // copy initial vertices
-    memcpy(vb_initial, INITIAL_PYRAMID, INITIAL_PYRAMID_VCOUNT * sizeof(Vertex));
+    memcpy(vb, INITIAL_PYRAMID, INITIAL_PYRAMID_VCOUNT * sizeof(Vertex));
     cv = 6;
 
     // RUN!
-    Tesselate(0, 3, 4, vb_initial, &cv, ib, &ci, 1);
-    Tesselate(3, 2, 4, vb_initial, &cv, ib, &ci, 1);
-    Tesselate(2, 1, 4, vb_initial, &cv, ib, &ci, 1);
-    Tesselate(1, 0, 4, vb_initial, &cv, ib, &ci, 1);
-    Tesselate(0, 1, 5, vb_initial, &cv, ib, &ci, 1);
-    Tesselate(1, 2, 5, vb_initial, &cv, ib, &ci, 1);
-    Tesselate(2, 3, 5, vb_initial, &cv, ib, &ci, 1);
-    Tesselate(3, 0, 5, vb_initial, &cv, ib, &ci, 1);
+    Tesselate(0, 3, 4, vb, &cv, ib, &ci, 1);
+    Tesselate(3, 2, 4, vb, &cv, ib, &ci, 1);
+    Tesselate(2, 1, 4, vb, &cv, ib, &ci, 1);
+    Tesselate(1, 0, 4, vb, &cv, ib, &ci, 1);
+    Tesselate(0, 1, 5, vb, &cv, ib, &ci, 1);
+    Tesselate(1, 2, 5, vb, &cv, ib, &ci, 1);
+    Tesselate(2, 3, 5, vb, &cv, ib, &ci, 1);
+    Tesselate(3, 0, 5, vb, &cv, ib, &ci, 1);
 
     // generate final state of vb
     unsigned v_size = VERTICES_COUNT*sizeof(Vertex);
     unsigned i_size = INDICES_COUNT*sizeof(DWORD);
 
-    memcpy(vb_final, vb_initial, v_size);
-    for(int i = 0; i < VERTICES_COUNT; ++i)
-        vb_final[i].v *= (SPHERA_RADIUS / D3DXVec3Length(&vb_final[i].v));
-
     // initializing vertex and index buffers
     OK( device->CreateVertexBuffer(v_size, 0, 0, D3DPOOL_MANAGED, vertex_buffer, NULL) );
     OK( device->CreateIndexBuffer(i_size, 0, D3DFMT_INDEX32, D3DPOOL_MANAGED, index_buffer, NULL) );
 
-    // We would set vertex_buffer later
-
     void * buffer = NULL;
+    OK( (*vertex_buffer)->Lock(0, 0, &buffer, 0) );
+    memcpy(buffer, vb, v_size);
+    (*vertex_buffer)->Unlock();
+
     OK( (*index_buffer)->Lock(0, 0, &buffer, 0) );
     memcpy(buffer, ib, i_size);
     (*index_buffer)->Unlock();
@@ -265,28 +271,13 @@ void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_dec
     ReleaseInterface(code);
 }
 
-void AnimateVB(IDirect3DVertexBuffer9 *vertex_buffer, Vertex *vb_initial, Vertex *vb_final, LONG time)
+void SetTimeToShader(Device *device, LONG time)
 {
-    static bool first = true;
-    static Vertex vb[VERTICES_COUNT];
-    unsigned v_size = VERTICES_COUNT*sizeof(Vertex);
-    void * buffer = NULL;
-
-    if (first)
-    {
-        // set colors
-        memcpy(vb, vb_initial, v_size);
-        first = false;
-    }
-
     // time -> 0..1
-    float t = (1.0f + sinf(D3DXToRadian( 4.0f*static_cast<float>(time%90) )))/2;
-    for (int i = 0; i < VERTICES_COUNT; ++i)
-        vb[i].v = (vb_initial[i].v*(1.0f-t) + vb_final[i].v*t)/2;
-
-    OK( vertex_buffer->Lock(0, 0, &buffer, 0) );
-    memcpy(buffer, vb, v_size);
-    vertex_buffer->Unlock();
+    D3DXVECTOR4 v((1.0f + sinf(D3DXToRadian( static_cast<float>(time*SPEED) )))/2, 0.0f, 0.0f, 0.0f);
+    OK( device->SetVertexShaderConstantF(TIME_REG, v, 1) );
+    v.x = SPHERA_RADIUS;
+    OK( device->SetVertexShaderConstantF(RADIUS_REG, v, 1) );
 }
 
 void CalcMatrix(Device *device, float rho, float tetha, float phi)
@@ -328,7 +319,7 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
         0,      0,      1, 0
     );
 
-    OK( device->SetVertexShaderConstantF(0, projMatrix * viewMatrix, WORLD_DIMENSION + 1) );
+    OK( device->SetVertexShaderConstantF(MATRIX_REG, projMatrix * viewMatrix, WORLD_DIMENSION + 1) );
 }
 
 void Render(Device *device,
@@ -358,8 +349,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     IDirect3DVertexShader9 *vertex_shader = NULL;
     IDirect3DVertexDeclaration9 *vertex_declaration = NULL;
 
-    Vertex vb_initial[VERTICES_COUNT];
-    Vertex vb_final[VERTICES_COUNT];
+    Vertex vb[VERTICES_COUNT];
     DWORD ib[INDICES_COUNT];
 
     MSG msg = {0};
@@ -384,12 +374,10 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
         RegisterClassEx(&wcex);
 
-        HWND hWnd;
-        if (NULL == (hWnd = CreateWindow(window_class_name, window_title, WS_CAPTION | WS_SYSMENU,
-                                         CW_USEDEFAULT, 0, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hInstance, NULL)))
-        {
+        HWND hWnd = CreateWindow(window_class_name, window_title, WS_CAPTION | WS_SYSMENU,
+                                         CW_USEDEFAULT, 0, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
+        if (hWnd == NULL)
             throw std::exception();
-        }
 
         SetClassFloat(hWnd, RHO, COORDS[RHO].initial);
         SetClassFloat(hWnd, THETA, COORDS[THETA].initial);
@@ -398,7 +386,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        InitVIB(device, &vertex_buffer, &index_buffer, vb_initial, vb_final, ib);
+        InitVIB(device, &vertex_buffer, &index_buffer, vb, ib);
         InitVDeclAndShader(device, &vertex_declaration, &vertex_shader);
 
         // SHOWING WINDOW
@@ -419,7 +407,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             }
             else
             {
-                AnimateVB(vertex_buffer, vb_initial, vb_final, GetTime(hWnd));
+                SetTimeToShader(device, GetTime(hWnd));
                 CalcMatrix(device,
                     GetClassFloat(hWnd, RHO),
                     GetClassFloat(hWnd, THETA),
