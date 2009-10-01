@@ -1,22 +1,19 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "main.h"
 
 typedef IDirect3DDevice9 Device;
-#define RELEASE_IFACE(x) if(x!=NULL) x->Release();
-#define COLOR_DEFINE(name, r, g, b) \
-    const DWORD name = D3DCOLOR_XRGB( (r), (g), (b) );
 
-COLOR_DEFINE( BLACK,       0,   0,   0 )
-COLOR_DEFINE( BLUE,        0,   0, 255 )
-COLOR_DEFINE( GREEN,       0, 255,   0 )
-COLOR_DEFINE( CYAN,        0, 255, 255 )
-COLOR_DEFINE( RED,       255,   0,   0 )
-COLOR_DEFINE( MAGENTA,   255,   0, 255 )
-COLOR_DEFINE( YELLOW,    255, 255,   0 )
-COLOR_DEFINE( WHITE,     255, 255, 255 )
-COLOR_DEFINE( GRAY,      128, 128, 128 )
+const DWORD BLACK = D3DCOLOR_XRGB( 0, 0, 0);
+const DWORD BLUE = D3DCOLOR_XRGB( 0, 0, 255);
+const DWORD GREEN = D3DCOLOR_XRGB( 0, 255, 0);
+const DWORD CYAN = D3DCOLOR_XRGB( 0, 255, 255);
+const DWORD RED = D3DCOLOR_XRGB( 255, 0, 0);
+const DWORD MAGENTA = D3DCOLOR_XRGB( 255, 0, 255);
+const DWORD YELLOW = D3DCOLOR_XRGB( 255, 255, 0);
+const DWORD WHITE = D3DCOLOR_XRGB( 255, 255, 255);
+const DWORD GRAY = D3DCOLOR_XRGB( 128, 128, 128);
 
-struct VERTEX
+struct Vertex
 {
     D3DXVECTOR3 v;
     DWORD color;
@@ -30,10 +27,10 @@ const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 };
 
 const unsigned TESSELATE_LEVEL = 3; // <6
-const unsigned vertices_count = 6 + 8 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's math
-const unsigned indices_count = 144 * (1 << 2*(TESSELATE_LEVEL-1)); // it's too
+const unsigned VERTICES_COUNT = 6 + 8 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's math
+const unsigned INDICES_COUNT = 144 * (1 << 2*(TESSELATE_LEVEL-1)); // it's too
 
-const VERTEX initial_pyramid[] = {
+const Vertex INITIAL_PYRAMID[] = {
     { D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ),    RED     },
     { D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ),    MAGENTA },
     { D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ),    CYAN    },
@@ -41,8 +38,10 @@ const VERTEX initial_pyramid[] = {
     { D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ),    WHITE   },
     { D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ),    BLACK   },
 };
-const unsigned initial_pyramid_vcount = sizeof(initial_pyramid)/sizeof(initial_pyramid[0]);
-const float sphera_radius = sqrtf(2.0);
+const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
+const float SPHERA_RADIUS = sqrtf(2.0);
+
+unsigned WORLD_DIMENSION = 3;
 
 enum SphericalCoords
 {
@@ -66,7 +65,7 @@ const Coord COORDS[] = {
     { -1e37f,       1e37f,          D3DX_PI/24,     0.0f      }  // PHI
 };
 
-const unsigned time_value_index = 12;
+const unsigned TIME_VALUE_INDEX = 12;
 
 const TCHAR SHADER_FILE[] = _T("shader.vsh");
 
@@ -79,25 +78,36 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void OK(HRESULT result)
 {
     if (result != D3D_OK)
+    {
+        wchar_t buffer[] = L"DirectX error occured: 0x00000000";
+        // all constants are calculated from the previous line
+        swprintf(buffer+25, 8+1, L"%08x", result);
+        MessageBox(NULL, buffer, L"ERROR", MB_ICONERROR | MB_OK);
         throw std::exception();
+    }
 }
 
-float GCF(HWND hWnd, SphericalCoords coord) // GetClassFloat
+float GetClassFloat(HWND hWnd, SphericalCoords coord) // GetClassFloat
 {
     static long res;
-    return *(float*)(&(res = GetClassLong(hWnd, 4*coord)));
+    return *reinterpret_cast<float*>(&(res = GetClassLong(hWnd, sizeof(float)*coord)));
 }
-void SCF(HWND hWnd, SphericalCoords coord, float value) // SetClassFloat
+void SetClassFloat(HWND hWnd, SphericalCoords coord, float value) // SetClassFloat
 {
-    SetClassLong(hWnd, 4*coord, *(LONG*)(&value));
+    SetClassLong(hWnd, sizeof(float)*coord, *reinterpret_cast<LONG*>(&value));
 }
-LONG GCTime(HWND hWnd)
+LONG GetTime(HWND hWnd)
 {
-    return GetClassLong(hWnd, time_value_index);
+    return GetClassLong(hWnd, TIME_VALUE_INDEX);
 }
-void IncCTime(HWND hWnd)
+void IncTime(HWND hWnd)
 {
-    SetClassLong(hWnd, time_value_index, 1+GetClassLong(hWnd, time_value_index));
+    SetClassLong(hWnd, TIME_VALUE_INDEX, 1+GetClassLong(hWnd, TIME_VALUE_INDEX));
+}
+void ReleaseInterface(IUnknown *x)
+{
+    if(x != NULL)
+        x->Release();
 }
 DWORD MixColors(D3DCOLOR c1, D3DCOLOR c2)
 {
@@ -113,7 +123,7 @@ DWORD RandColor()
 }
 
 void Tesselate(unsigned i1, unsigned i2, unsigned i3,
-               VERTEX *vb, unsigned *cv,
+               Vertex *vb, unsigned *cv,
                DWORD *ib, unsigned *ci,
                int level)
 {
@@ -132,6 +142,7 @@ void Tesselate(unsigned i1, unsigned i2, unsigned i3,
     // set indices
     if (level == TESSELATE_LEVEL)
     {
+        // adding indices to index buffer
 #define add2ib(x, y) ib[(*ci)++] = x; ib[(*ci)++] = y;
         add2ib(i1, j);
         add2ib(j, j+2);
@@ -158,9 +169,8 @@ void Tesselate(unsigned i1, unsigned i2, unsigned i3,
 
 void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
 {
-    // initializing device
-
-    if (NULL == (*d3d = Direct3DCreate9(D3D_SDK_VERSION)))
+    *d3d = Direct3DCreate9(D3D_SDK_VERSION);
+    if (*d3d == NULL)
         throw std::exception();
 
     D3DPRESENT_PARAMETERS params;
@@ -184,13 +194,13 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
 }
 
 void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIndexBuffer9 **index_buffer,
-             VERTEX *vb_initial, VERTEX *vb_final, DWORD *ib)
+             Vertex *vb_initial, Vertex *vb_final, DWORD *ib)
 {
     unsigned cv = 0; // current index in vb
     unsigned ci = 0; // current index in ib
 
     // copy initial vertices
-    memcpy(vb_initial, initial_pyramid, initial_pyramid_vcount * sizeof(VERTEX));
+    memcpy(vb_initial, INITIAL_PYRAMID, INITIAL_PYRAMID_VCOUNT * sizeof(Vertex));
     cv = 6;
 
     // RUN!
@@ -204,12 +214,12 @@ void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIn
     Tesselate(3, 0, 5, vb_initial, &cv, ib, &ci, 1);
 
     // generate final state of vb
-    unsigned v_size = vertices_count*sizeof(VERTEX);
-    unsigned i_size = indices_count*sizeof(DWORD);
+    unsigned v_size = VERTICES_COUNT*sizeof(Vertex);
+    unsigned i_size = INDICES_COUNT*sizeof(DWORD);
 
     memcpy(vb_final, vb_initial, v_size);
-    for(int i = 0; i < vertices_count; ++i)
-        vb_final[i].v *= (sphera_radius / D3DXVec3Length(&vb_final[i].v));
+    for(int i = 0; i < VERTICES_COUNT; ++i)
+        vb_final[i].v *= (SPHERA_RADIUS / D3DXVec3Length(&vb_final[i].v));
 
     // initializing vertex and index buffers
     OK( device->CreateVertexBuffer(v_size, 0, 0, D3DPOOL_MANAGED, vertex_buffer, NULL) );
@@ -233,14 +243,14 @@ void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_dec
     OK( D3DXAssembleShaderFromFile(SHADER_FILE, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
     OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), vertex_shader) );
 
-    RELEASE_IFACE(code);
+    ReleaseInterface(code);
 }
 
-void AnimateVB(IDirect3DVertexBuffer9 *vertex_buffer, VERTEX *vb_initial, VERTEX *vb_final, LONG time)
+void AnimateVB(IDirect3DVertexBuffer9 *vertex_buffer, Vertex *vb_initial, Vertex *vb_final, LONG time)
 {
     static bool first = true;
-    static VERTEX vb[vertices_count];
-    unsigned v_size = vertices_count*sizeof(VERTEX);
+    static Vertex vb[VERTICES_COUNT];
+    unsigned v_size = VERTICES_COUNT*sizeof(Vertex);
     void * buffer = NULL;
 
     if (first)
@@ -252,7 +262,7 @@ void AnimateVB(IDirect3DVertexBuffer9 *vertex_buffer, VERTEX *vb_initial, VERTEX
 
     // time -> 0..1
     float t = (1.0f + sinf(D3DXToRadian( 4.0f*static_cast<float>(time%90) )))/2;
-    for (int i = 0; i < vertices_count; ++i)
+    for (int i = 0; i < VERTICES_COUNT; ++i)
         vb[i].v = (vb_initial[i].v*(1.0f-t) + vb_final[i].v*t)/2;
 
     OK( vertex_buffer->Lock(0, 0, &buffer, 0) );
@@ -299,7 +309,7 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
         0,      0,      1, 0
     );
 
-    OK( device->SetVertexShaderConstantF(0, projMatrix * viewMatrix, 4) );
+    OK( device->SetVertexShaderConstantF(0, projMatrix * viewMatrix, WORLD_DIMENSION + 1) );
 }
 
 void Render(Device *device,
@@ -309,11 +319,11 @@ void Render(Device *device,
     OK( device->BeginScene() );
 
     OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, GRAY, 1.0f, 0 ) );
-    OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof(VERTEX)) );
+    OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof(Vertex)) );
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, vertices_count, 0, indices_count/2) );
+    OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, VERTICES_COUNT, 0, INDICES_COUNT/2) );
 
     OK( device->EndScene() );
 
@@ -329,9 +339,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     IDirect3DVertexShader9 *vertex_shader = NULL;
     IDirect3DVertexDeclaration9 *vertex_declaration = NULL;
 
-    VERTEX vb_initial[vertices_count];
-    VERTEX vb_final[vertices_count];
-    DWORD ib[indices_count];
+    Vertex vb_initial[VERTICES_COUNT];
+    Vertex vb_final[VERTICES_COUNT];
+    DWORD ib[INDICES_COUNT];
 
     MSG msg = {0};
     try
@@ -362,10 +372,10 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             throw std::exception();
         }
 
-        SCF(hWnd, RHO, COORDS[RHO].initial);
-        SCF(hWnd, THETA, COORDS[THETA].initial);
-        SCF(hWnd, PHI, COORDS[PHI].initial);
-        SetClassLong(hWnd, time_value_index, 0);
+        SetClassFloat(hWnd, RHO, COORDS[RHO].initial);
+        SetClassFloat(hWnd, THETA, COORDS[THETA].initial);
+        SetClassFloat(hWnd, PHI, COORDS[PHI].initial);
+        SetClassLong(hWnd, TIME_VALUE_INDEX, 0);
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
@@ -390,11 +400,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             }
             else
             {
-                AnimateVB(vertex_buffer, vb_initial, vb_final, GCTime(hWnd));
+                AnimateVB(vertex_buffer, vb_initial, vb_final, GetTime(hWnd));
                 CalcMatrix(device,
-                    GCF(hWnd, RHO),
-                    GCF(hWnd, THETA),
-                    GCF(hWnd, PHI)
+                    GetClassFloat(hWnd, RHO),
+                    GetClassFloat(hWnd, THETA),
+                    GetClassFloat(hWnd, PHI)
                 );
                 Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration);
             }
@@ -405,26 +415,26 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     }
 
     // CLEANING
-    RELEASE_IFACE(d3d);
-    RELEASE_IFACE(device);
-    RELEASE_IFACE(vertex_buffer);
-    RELEASE_IFACE(index_buffer);
-    RELEASE_IFACE(vertex_shader);
-    RELEASE_IFACE(vertex_declaration);
+    ReleaseInterface(d3d);
+    ReleaseInterface(device);
+    ReleaseInterface(vertex_buffer);
+    ReleaseInterface(index_buffer);
+    ReleaseInterface(vertex_shader);
+    ReleaseInterface(vertex_declaration);
 
     return (int) msg.wParam;
 }
 
 void IncCoord(HWND hWnd, SphericalCoords coord)
 {
-    float var = GCF(hWnd, coord) + COORDS[coord].delta;
-    SCF(hWnd, coord, min(var, COORDS[coord].max));
+    float var = GetClassFloat(hWnd, coord) + COORDS[coord].delta;
+    SetClassFloat(hWnd, coord, min(var, COORDS[coord].max));
 }
 
 void DecCoord(HWND hWnd, SphericalCoords coord)
 {
-    float var = GCF(hWnd, coord) - COORDS[coord].delta;
-    SCF(hWnd, coord, max(var, COORDS[coord].min));
+    float var = GetClassFloat(hWnd, coord) - COORDS[coord].delta;
+    SetClassFloat(hWnd, coord, max(var, COORDS[coord].min));
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -443,7 +453,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
 
-    case WM_TIMER:      IncCTime(hWnd);        break;
+    case WM_TIMER:      IncTime(hWnd);        break;
 
     case WM_DESTROY:
         PostQuitMessage(0);
