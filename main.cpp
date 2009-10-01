@@ -13,10 +13,18 @@ const DWORD YELLOW = D3DCOLOR_XRGB( 255, 255, 0);
 const DWORD WHITE = D3DCOLOR_XRGB( 255, 255, 255);
 const DWORD GRAY = D3DCOLOR_XRGB( 128, 128, 128);
 
+DWORD RandColor();
+
 struct Vertex
 {
     D3DXVECTOR3 v;
     DWORD color;
+
+    Vertex(D3DXVECTOR3 v = D3DXVECTOR3(0, 0, 0)) : v(v)
+    {
+        color = RandColor();
+    }
+    Vertex(D3DXVECTOR3 v, DWORD color) : v(v), color(color) {}
 };
 
 const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
@@ -41,18 +49,18 @@ const int WINDOW_HEIGHT = 700;
 
 const float SPEED = 20.0f;
 
-const unsigned TESSELATE_LEVEL = 3; // <6
-const bool TESSELATE_RANDOM_COLORS = false;
-const unsigned VERTICES_COUNT = 6 + 8 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's math
-const unsigned INDICES_COUNT = 96 * (1 << 2*(TESSELATE_LEVEL-1)); // it's too
+const unsigned TESSELATE_LEVEL = 5; // <6
+//const bool TESSELATE_RANDOM_COLORS = true;
+const unsigned VERTICES_COUNT = 4 * (TESSELATE_LEVEL + 1) * (TESSELATE_LEVEL + 2); // it's math
+const unsigned INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL; // it's too
 
 const Vertex INITIAL_PYRAMID[] = {
-    { D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ),    RED     },
-    { D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ),    MAGENTA },
-    { D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ),    CYAN    },
-    { D3DXVECTOR3(  1.0f, -1.0f,  0.0f       ),    GREEN   },
-    { D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ),    WHITE   },
-    { D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ),    BLACK   },
+    Vertex( D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ) ),
+    Vertex( D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ) ),
+    Vertex( D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ) ),
+    Vertex( D3DXVECTOR3(  1.0f, -1.0f,  0.0f       ) ),
+    Vertex( D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ) ),
+    Vertex( D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ) ),
 };
 const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
 const float SPHERA_RADIUS = sqrtf(2.0);
@@ -132,64 +140,61 @@ void ReleaseInterface(IUnknown *x)
     if(x != NULL)
         x->Release();
 }
-DWORD MixColors(D3DCOLOR c1, D3DCOLOR c2)
-{
-    return D3DCOLOR_XRGB(
-                ((c1 & 0xff0000) + (c2 & 0xff0000)) >> 17,
-                ((c1 & 0xff00)   + (c2 & 0xff00)) >> 9,
-                ((c1 & 0xff)     + (c2 & 0xff)) >> 1
-           );
-}
+//DWORD MixColors(D3DCOLOR c1, D3DCOLOR c2)
+//{
+//    return D3DCOLOR_XRGB(
+//                ((c1 & 0xff0000) + (c2 & 0xff0000)) >> 17,
+//                ((c1 & 0xff00)   + (c2 & 0xff00)) >> 9,
+//                ((c1 & 0xff)     + (c2 & 0xff)) >> 1
+//           );
+//}
 DWORD RandColor()
 {
     return D3DCOLOR_XRGB(rand()%256, rand()%256, rand()%256);
 }
-
-void Tesselate(unsigned i1, unsigned i2, unsigned i3,
-               Vertex *vb, unsigned *cv,
-               DWORD *ib, unsigned *ci,
-               int level)
+void Add3Indices(DWORD *ib, unsigned *ci, DWORD i1, DWORD i2, DWORD i3)
 {
-    if (level > TESSELATE_LEVEL)
-        return;
+    ib[(*ci)++] = i1;
+    ib[(*ci)++] = i2;
+    ib[(*ci)++] = i3;
+}
 
-    unsigned j = *cv;
-    // set vertices
-    vb[ j ].v = ( vb[i1].v + vb[i2].v )/2;
-    vb[j+1].v = ( vb[i2].v + vb[i3].v )/2;
-    vb[j+2].v = ( vb[i3].v + vb[i1].v )/2;
-    if (TESSELATE_RANDOM_COLORS)
-    {
-        vb[ j ].color = RandColor();
-        vb[j+1].color = RandColor();
-        vb[j+2].color = RandColor();
-    }   
-    else
-    {
-        vb[ j ].color = MixColors(vb[i1].color, vb[i2].color);
-        vb[j+1].color = MixColors(vb[i2].color, vb[i3].color);
-        vb[j+2].color = MixColors(vb[i3].color, vb[i1].color);
-    }   
-    *cv = j+3;
+void Tesselate(Vertex *vb, DWORD *ib)
+{
+    unsigned ci = 0; // current index
+    unsigned cv = 0; // current vertex
 
-    // set indices
-    if (level == TESSELATE_LEVEL)
+    const unsigned sides[][4] = {
+        {4, 0, 3, 1},
+        {4, 2, 1, 1},
+        {5, 0, 1, 1},
+        {5, 2, 3, 1},
+        {4, 1, 0, 0},
+        {4, 3, 2, 0},
+        {5, 1, 2, 0},
+        {5, 3, 0, 0}
+    };
+    for(int j = 0; j < sizeof(sides)/sizeof(sides[0]); ++j)
     {
-        // adding indices to index buffer
-        DWORD indices[] = {
-            i1, j+2, j,     j, j+1, i2,
-            j+1, j, j+2,    j+2, i3, j+1
-        };
-        for (int k = 0; k < sizeof(indices)/sizeof(indices[0]); ++k)
-            ib[(*ci)++] = indices[k];
+        D3DXVECTOR3 top = INITIAL_PYRAMID[sides[j][0]].v;
+        D3DXVECTOR3 to_left = (INITIAL_PYRAMID[sides[j][1]].v - top)/TESSELATE_LEVEL;
+        D3DXVECTOR3 to_right = (INITIAL_PYRAMID[sides[j][2]].v - top)/TESSELATE_LEVEL;
+        vb[cv++] = top;
+
+        for (int level = 1; level <= TESSELATE_LEVEL; ++level)
+        {
+            vb[cv] = vb[cv-level].v + to_left;
+            for (int i = 1; i < level; ++i)
+            {
+                vb[cv + i] = vb[cv-level + i-1].v + to_right;
+                Add3Indices(ib, &ci, cv + i, cv-level + i-1, cv + i-1);
+                Add3Indices(ib, &ci, cv + i, cv-level + i, cv-level + i-1);
+            }
+            vb[cv + level] = vb[cv - 1].v + to_right;
+            Add3Indices(ib, &ci, cv + level, cv - 1, cv + level-1);
+            cv += level+1;
+        }
     }
-
-    ++level;
-    // next level
-    Tesselate(i1,  j,  j+2,  vb, cv, ib, ci, level);
-    Tesselate(j,   i2,  j+1, vb, cv, ib, ci, level);
-    Tesselate(j+1, j+2, j,   vb, cv, ib, ci, level);
-    Tesselate(j+2, j+1, i3,  vb, cv, ib, ci, level);
 }
 
 void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
@@ -223,24 +228,9 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
 void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIndexBuffer9 **index_buffer,
              Vertex *vb, DWORD *ib)
 {
-    unsigned cv = 0; // current index in vb
-    unsigned ci = 0; // current index in ib
-
-    // copy initial vertices
-    memcpy(vb, INITIAL_PYRAMID, INITIAL_PYRAMID_VCOUNT * sizeof(Vertex));
-    cv = 6;
-
     // RUN!
-    Tesselate(0, 3, 4, vb, &cv, ib, &ci, 1);
-    Tesselate(3, 2, 4, vb, &cv, ib, &ci, 1);
-    Tesselate(2, 1, 4, vb, &cv, ib, &ci, 1);
-    Tesselate(1, 0, 4, vb, &cv, ib, &ci, 1);
-    Tesselate(0, 1, 5, vb, &cv, ib, &ci, 1);
-    Tesselate(1, 2, 5, vb, &cv, ib, &ci, 1);
-    Tesselate(2, 3, 5, vb, &cv, ib, &ci, 1);
-    Tesselate(3, 0, 5, vb, &cv, ib, &ci, 1);
+    Tesselate(vb, ib);
 
-    // generate final state of vb
     unsigned v_size = VERTICES_COUNT*sizeof(Vertex);
     unsigned i_size = INDICES_COUNT*sizeof(DWORD);
 
@@ -355,6 +345,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     MSG msg = {0};
     try
     {
+        srand( static_cast<unsigned>(time(NULL)) );
+
         TCHAR window_title[] = _T("D3D window");
         TCHAR window_class_name[] = _T("D3D_APP");
 
