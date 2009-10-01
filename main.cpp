@@ -26,6 +26,16 @@ const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
     D3DDECL_END()
 };
 
+struct RS
+{
+    D3DRENDERSTATETYPE state;
+    DWORD value;
+};
+const RS RENDER_STATES[] = {
+    { D3DRS_FILLMODE, D3DFILL_WIREFRAME },
+    { D3DRS_CULLMODE, D3DCULL_NONE },
+};
+
 const unsigned TESSELATE_LEVEL = 3; // <6
 const unsigned VERTICES_COUNT = 6 + 8 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's math
 const unsigned INDICES_COUNT = 144 * (1 << 2*(TESSELATE_LEVEL-1)); // it's too
@@ -193,8 +203,10 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
                                     &params,
                                     device) );
 
-    //(*device)->SetRenderState( D3DRS_CULLMODE, D3DCULL_NONE );
-    //(*device)->SetRenderState( D3DRS_ZENABLE, D3DZB_TRUE );
+    for(int i = 0; i < sizeof(RENDER_STATES)/sizeof(RENDER_STATES[0]); ++i)
+        OK( (*device)->SetRenderState( RENDER_STATES[i].state,
+                                       RENDER_STATES[i].value )
+        );
 }
 
 void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIndexBuffer9 **index_buffer,
