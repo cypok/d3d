@@ -79,9 +79,13 @@ void OK(HRESULT result)
 {
     if (result != D3D_OK)
     {
-        wchar_t buffer[] = L"DirectX error occured: 0x00000000";
+        TCHAR buffer[] = _T("DirectX error occured: 0x00000000");
         // all constants are calculated from the previous line
-        swprintf(buffer+25, 8+1, L"%08x", result);
+        #ifdef UNICODE
+            swprintf(buffer+25, 8+1, L"%08x", result);
+        #else
+            sprintf(buffer+25, 8+1, "%08x", result);
+        #endif
         MessageBox(NULL, buffer, L"ERROR", MB_ICONERROR | MB_OK);
         throw std::exception();
     }
