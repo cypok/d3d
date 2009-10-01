@@ -37,8 +37,9 @@ const RS RENDER_STATES[] = {
 };
 
 const unsigned TESSELATE_LEVEL = 3; // <6
+const bool TESSELATE_RANDOM_COLORS = false;
 const unsigned VERTICES_COUNT = 6 + 8 * ( (1 << 2*TESSELATE_LEVEL) - 1 ); // it's math
-const unsigned INDICES_COUNT = 144 * (1 << 2*(TESSELATE_LEVEL-1)); // it's too
+const unsigned INDICES_COUNT = 96 * (1 << 2*(TESSELATE_LEVEL-1)); // it's too
 
 const Vertex INITIAL_PYRAMID[] = {
     { D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ),    RED     },
@@ -149,31 +150,33 @@ void Tesselate(unsigned i1, unsigned i2, unsigned i3,
     vb[ j ].v = ( vb[i1].v + vb[i2].v )/2;
     vb[j+1].v = ( vb[i2].v + vb[i3].v )/2;
     vb[j+2].v = ( vb[i3].v + vb[i1].v )/2;
-    vb[ j ].color = MixColors(vb[i1].color, vb[i2].color);
-    vb[j+1].color = MixColors(vb[i2].color, vb[i3].color);
-    vb[j+2].color = MixColors(vb[i3].color, vb[i1].color);
+    if (TESSELATE_RANDOM_COLORS)
+    {
+        vb[ j ].color = RandColor();
+        vb[j+1].color = RandColor();
+        vb[j+2].color = RandColor();
+    }   
+    else
+    {
+        vb[ j ].color = MixColors(vb[i1].color, vb[i2].color);
+        vb[j+1].color = MixColors(vb[i2].color, vb[i3].color);
+        vb[j+2].color = MixColors(vb[i3].color, vb[i1].color);
+    }   
+    *cv = j+3;
 
     // set indices
     if (level == TESSELATE_LEVEL)
     {
         // adding indices to index buffer
-#define add2ib(x, y) ib[(*ci)++] = x; ib[(*ci)++] = y;
-        add2ib(i1, j);
-        add2ib(j, j+2);
-        add2ib(j+2, i1);
-
-        add2ib(j, i2);
-        add2ib(i2, j+1);
-        add2ib(j+1, j);
-
-        add2ib(j+2, j+1);
-        add2ib(j+1, i3);
-        add2ib(i3, j+2);
-#undef add2ib
+        DWORD indices[] = {
+            i1, j+2, j,     j, j+1, i2,
+            j+1, j, j+2,    j+2, i3, j+1
+        };
+        for (int k = 0; k < sizeof(indices)/sizeof(indices[0]); ++k)
+            ib[(*ci)++] = indices[k];
     }
 
     ++level;
-    *cv = j+3;
     // next level
     Tesselate(i1,  j,  j+2,  vb, cv, ib, ci, level);
     Tesselate(j,   i2,  j+1, vb, cv, ib, ci, level);
@@ -339,7 +342,7 @@ void Render(Device *device,
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, VERTICES_COUNT, 0, INDICES_COUNT/2) );
+    OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, VERTICES_COUNT, 0, INDICES_COUNT/3) );
 
     OK( device->EndScene() );
 
