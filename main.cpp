@@ -2,21 +2,18 @@
 #include "main.h"
 
 typedef IDirect3DDevice9 Device;
-#define RELEASE_IFACE(x) if(x!=NULL) x->Release();
-#define COLOR_DEFINE(name, r, g, b) \
-    const DWORD name = D3DCOLOR_XRGB( (r), (g), (b) );
 
-COLOR_DEFINE( BLACK,       0,   0,   0 )
-COLOR_DEFINE( BLUE,        0,   0, 255 )
-COLOR_DEFINE( GREEN,       0, 255,   0 )
-COLOR_DEFINE( CYAN,        0, 255, 255 )
-COLOR_DEFINE( RED,       255,   0,   0 )
-COLOR_DEFINE( MAGENTA,   255,   0, 255 )
-COLOR_DEFINE( YELLOW,    255, 255,   0 )
-COLOR_DEFINE( WHITE,     255, 255, 255 )
-COLOR_DEFINE( GRAY,      128, 128, 128 )
+const DWORD BLACK = D3DCOLOR_XRGB( 0, 0, 0);
+const DWORD BLUE = D3DCOLOR_XRGB( 0, 0, 255);
+const DWORD GREEN = D3DCOLOR_XRGB( 0, 255, 0);
+const DWORD CYAN = D3DCOLOR_XRGB( 0, 255, 255);
+const DWORD RED = D3DCOLOR_XRGB( 255, 0, 0);
+const DWORD MAGENTA = D3DCOLOR_XRGB( 255, 0, 255);
+const DWORD YELLOW = D3DCOLOR_XRGB( 255, 255, 0);
+const DWORD WHITE = D3DCOLOR_XRGB( 255, 255, 255);
+const DWORD GRAY = D3DCOLOR_XRGB( 128, 128, 128);
 
-struct VERTEX
+struct Vertex
 {
     FLOAT x, y, z;
     DWORD color;
@@ -29,7 +26,7 @@ const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
     D3DDECL_END()
 };
 
-const VERTEX vertices[] = {
+const Vertex VERTICES[] = {
     // colored cube sides
     {  1.0f,  1.0f, -1.0f, WHITE   }, // 0
     {  1.0f,  1.0f,  1.0f, CYAN    }, // 1
@@ -40,7 +37,7 @@ const VERTEX vertices[] = {
     {  1.0f, -1.0f, -1.0f, YELLOW  }, // 6
     {  1.0f, -1.0f,  1.0f, GREEN   }, // 7
 };
-const DWORD indices[] = {
+const DWORD INDICES[] = {
     0, 2, 3,    0, 3, 1, // +y
     2, 4, 5,    2, 5, 3, // -x
     4, 6, 7,    4, 7, 5, // -y
@@ -54,10 +51,12 @@ const DWORD indices[] = {
     1, 7,   3, 5,
     2, 4,   0, 6,
 };
-const unsigned vertices_count = 8;
-const unsigned indices_count = 36 + 24;
-const unsigned triangles_count = 12;
-const unsigned lines_count = 12;
+const unsigned VERTICES_COUNT = 8;
+const unsigned INDICES_COUNT = 36 + 24;
+const unsigned TRIANGLES_COUNT = 12;
+const unsigned LINES_COUNT = 12;
+
+unsigned WORLD_DIMENSION = 3;
 
 enum SphericalCoords
 {
@@ -81,7 +80,8 @@ const Coord COORDS[] = {
     { -1e37f,       1e37f,          D3DX_PI/24,     D3DX_PI/6 }  // PHI
 };
 
-const unsigned side_edge_toggle = 12;
+const unsigned SIDE_EDGE_TOGGLE = 12;
+const LONG INITIAL_EDGE_TOGGLE = 0;
 
 const TCHAR SHADER_FILE[] = _T("shader.vsh");
 
@@ -97,21 +97,27 @@ void OK(HRESULT result)
         throw std::exception();
 }
 
-float GCF(HWND hWnd, SphericalCoords coord) // GetClassFloat
+float GetClassFloat(HWND hWnd, SphericalCoords coord)
 {
     static long res;
-    return *(float*)(&(res = GetClassLong(hWnd, 4*coord)));
+    return *reinterpret_cast<float*>(&(res = GetClassLong(hWnd, sizeof(float)*coord)));
 }
-void SCF(HWND hWnd, SphericalCoords coord, float value) // SetClassFloat
+void SetClassFloat(HWND hWnd, SphericalCoords coord, float value)
 {
-    SetClassLong(hWnd, 4*coord, *(LONG*)(&value));
+    SetClassLong(hWnd, sizeof(float)*coord, *reinterpret_cast<LONG*>(&value));
+}
+void ReleaseInterface(IUnknown *x)
+{
+    if(x != NULL)
+        x->Release();
 }
 
 void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
 {
     // initializing device
 
-    if (NULL == (*d3d = Direct3DCreate9(D3D_SDK_VERSION)))
+    *d3d = Direct3DCreate9(D3D_SDK_VERSION);
+    if (*d3d == NULL)
         throw std::exception();
 
     D3DPRESENT_PARAMETERS params;
@@ -138,19 +144,19 @@ void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIn
 {
     // initializing vertex and index buffers
 
-    unsigned v_size = vertices_count*sizeof(vertices[0]);
-    unsigned i_size = indices_count*sizeof(indices[0]);
+    unsigned v_size = VERTICES_COUNT*sizeof(VERTICES[0]);
+    unsigned i_size = INDICES_COUNT*sizeof(INDICES[0]);
 
     OK( device->CreateVertexBuffer(v_size, 0, 0, D3DPOOL_MANAGED, vertex_buffer, NULL) );
     OK( device->CreateIndexBuffer(i_size, 0, D3DFMT_INDEX32, D3DPOOL_MANAGED, index_buffer, NULL) );
 
     void * buffer = NULL;
     OK( (*vertex_buffer)->Lock(0, 0, &buffer, 0) );
-    memcpy(buffer, vertices, v_size);
+    memcpy(buffer, VERTICES, v_size);
     (*vertex_buffer)->Unlock();
 
     OK( (*index_buffer)->Lock(0, 0, &buffer, 0) );
-    memcpy(buffer, indices, i_size);
+    memcpy(buffer, INDICES, i_size);
     (*index_buffer)->Unlock();
 }
 
@@ -164,7 +170,7 @@ void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_dec
     OK( D3DXAssembleShaderFromFile(SHADER_FILE, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
     OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), vertex_shader) );
 
-    RELEASE_IFACE(code);
+    ReleaseInterface(code);
 }
 
 void CalcMatrix(Device *device, float rho, float tetha, float phi)
@@ -206,7 +212,7 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
         0,      0,      1, 0
     );
 
-    OK( device->SetVertexShaderConstantF(0, projMatrix * viewMatrix, 4) );
+    OK( device->SetVertexShaderConstantF(0, projMatrix * viewMatrix, WORLD_DIMENSION+1) );
 }
 
 void Render(Device *device,
@@ -217,14 +223,14 @@ void Render(Device *device,
     OK( device->BeginScene() );
 
     OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, GRAY, 1.0f, 0 ) );
-    OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof(VERTEX)) );
+    OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof(Vertex)) );
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
     if (render_sides)
-        OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertices_count, 0, triangles_count) );
+        OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, VERTICES_COUNT, 0, TRIANGLES_COUNT) );
     else
-        OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, vertices_count, triangles_count*3, lines_count) );
+        OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, VERTICES_COUNT, TRIANGLES_COUNT*3, LINES_COUNT) );
 
     OK( device->EndScene() );
 
@@ -251,28 +257,26 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         wcex.cbSize         = sizeof(WNDCLASSEX);
         wcex.style          = CS_HREDRAW | CS_VREDRAW;
         wcex.lpfnWndProc    = WndProc;
-        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG); // here would be stored view coordinates
+        wcex.cbClsExtra     = sizeof(float)*WORLD_DIMENSION+sizeof(LONG); // here would be stored view coordinates
         wcex.cbWndExtra     = 0;
         wcex.hInstance      = hInstance;
         wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
         wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
-        wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+        wcex.hbrBackground  = reinterpret_cast<HBRUSH>(COLOR_WINDOW+1);
         wcex.lpszMenuName   = 0;
         wcex.lpszClassName  = window_class_name;
         wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
         RegisterClassEx(&wcex);
 
-        HWND hWnd;
-        if (NULL == (hWnd = CreateWindow(window_class_name, window_title, WS_CAPTION | WS_SYSMENU,
-                                         CW_USEDEFAULT, 0, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hInstance, NULL)))
-        {
+        HWND hWnd = CreateWindow(window_class_name, window_title, WS_CAPTION | WS_SYSMENU,
+                                         CW_USEDEFAULT, 0, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
+        if (hWnd == NULL)
             throw std::exception();
-        }
 
-        SCF(hWnd, RHO, COORDS[RHO].initial);
-        SCF(hWnd, THETA, COORDS[THETA].initial);
-        SCF(hWnd, PHI, COORDS[PHI].initial);
-        SetClassLong(hWnd, side_edge_toggle, 0);
+        SetClassFloat(hWnd, RHO, COORDS[RHO].initial);
+        SetClassFloat(hWnd, THETA, COORDS[THETA].initial);
+        SetClassFloat(hWnd, PHI, COORDS[PHI].initial);
+        SetClassLong(hWnd, SIDE_EDGE_TOGGLE, INITIAL_EDGE_TOGGLE);
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
@@ -296,12 +300,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             else
             {
                 CalcMatrix(device,
-                    GCF(hWnd, RHO),
-                    GCF(hWnd, THETA),
-                    GCF(hWnd, PHI)
+                    GetClassFloat(hWnd, RHO),
+                    GetClassFloat(hWnd, THETA),
+                    GetClassFloat(hWnd, PHI)
                 );
                 Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration,
-                    static_cast<int>(GetClassLong(hWnd, side_edge_toggle)));
+                    static_cast<int>(GetClassLong(hWnd, SIDE_EDGE_TOGGLE)));
             }
         }
     }
@@ -310,31 +314,31 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     }
 
     // CLEANING
-    RELEASE_IFACE(d3d);
-    RELEASE_IFACE(device);
-    RELEASE_IFACE(vertex_buffer);
-    RELEASE_IFACE(index_buffer);
-    RELEASE_IFACE(vertex_shader);
-    RELEASE_IFACE(vertex_declaration);
+    ReleaseInterface(d3d);
+    ReleaseInterface(device);
+    ReleaseInterface(vertex_buffer);
+    ReleaseInterface(index_buffer);
+    ReleaseInterface(vertex_shader);
+    ReleaseInterface(vertex_declaration);
 
     return (int) msg.wParam;
 }
 
 void IncCoord(HWND hWnd, SphericalCoords coord)
 {
-    float var = GCF(hWnd, coord) + COORDS[coord].delta;
-    SCF(hWnd, coord, min(var, COORDS[coord].max));
+    float var = GetClassFloat(hWnd, coord) + COORDS[coord].delta;
+    SetClassFloat(hWnd, coord, min(var, COORDS[coord].max));
 }
 
 void DecCoord(HWND hWnd, SphericalCoords coord)
 {
-    float var = GCF(hWnd, coord) - COORDS[coord].delta;
-    SCF(hWnd, coord, max(var, COORDS[coord].min));
+    float var = GetClassFloat(hWnd, coord) - COORDS[coord].delta;
+    SetClassFloat(hWnd, coord, max(var, COORDS[coord].min));
 }
 
 void ToggleSideEdge(HWND hWnd)
 {
-    SetClassLong(hWnd, side_edge_toggle, !GetClassLong(hWnd, side_edge_toggle));
+    SetClassLong(hWnd, SIDE_EDGE_TOGGLE, !GetClassLong(hWnd, SIDE_EDGE_TOGGLE));
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
