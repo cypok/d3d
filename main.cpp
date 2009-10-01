@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "main.h"
 
 typedef IDirect3DDevice9 Device;
@@ -87,7 +87,13 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void OK(HRESULT result)
 {
     if (result != D3D_OK)
+    {
+        wchar_t buffer[] = L"DirectX error occured: 0x00000000";
+        // all constants are calculated from the previous line
+        swprintf(buffer+25, 8+1, L"%08x", result);
+        MessageBox(NULL, buffer, L"ERROR", MB_ICONERROR | MB_OK);
         throw std::exception();
+    }
 }
 
 float GetClassFloat(HWND hWnd, SphericalCoords coord)
