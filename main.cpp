@@ -44,17 +44,10 @@ const DWORD INDICES[] = {
     6, 0, 1,    6, 1, 7, // +x
     1, 3, 5,    1, 5, 7, // +z
     4, 2, 0,    4, 0, 6, // -z
-    0, 1,   2, 3,
-    4, 5,   6, 7,
-    0, 2,   1, 3,
-    4, 6,   5, 7,
-    1, 7,   3, 5,
-    2, 4,   0, 6,
 };
 const unsigned VERTICES_COUNT = 8;
-const unsigned INDICES_COUNT = 36 + 24;
+const unsigned INDICES_COUNT = 36;
 const unsigned TRIANGLES_COUNT = 12;
-const unsigned LINES_COUNT = 12;
 
 unsigned WORLD_DIMENSION = 3;
 
@@ -227,10 +220,8 @@ void Render(Device *device,
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    if (render_sides)
-        OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, VERTICES_COUNT, 0, TRIANGLES_COUNT) );
-    else
-        OK( device->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, VERTICES_COUNT, TRIANGLES_COUNT*3, LINES_COUNT) );
+    OK( device->SetRenderState(D3DRS_FILLMODE, render_sides ? D3DFILL_SOLID : D3DFILL_WIREFRAME) );
+    OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, VERTICES_COUNT, 0, TRIANGLES_COUNT) );
 
     OK( device->EndScene() );
 
