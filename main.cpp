@@ -49,16 +49,16 @@ const int WINDOW_HEIGHT = 700;
 
 const float SPEED = 20.0f;
 
-const unsigned TESSELATE_LEVEL = 5; // <6
+const unsigned TESSELATE_LEVEL = 8;
 //const bool TESSELATE_RANDOM_COLORS = true;
-const unsigned VERTICES_COUNT = 4 * (TESSELATE_LEVEL + 1) * (TESSELATE_LEVEL + 2); // it's math
+const unsigned VERTICES_COUNT = 2 * (1 + 2 * TESSELATE_LEVEL*TESSELATE_LEVEL); // it's math
 const unsigned INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL; // it's too
 
 const Vertex INITIAL_PYRAMID[] = {
     Vertex( D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ) ),
-    Vertex( D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ) ),
-    Vertex( D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ) ),
     Vertex( D3DXVECTOR3(  1.0f, -1.0f,  0.0f       ) ),
+    Vertex( D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ) ),
+    Vertex( D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ) ),
     Vertex( D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ) ),
     Vertex( D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ) ),
 };
@@ -159,40 +159,87 @@ void Add3Indices(DWORD *ib, unsigned *ci, DWORD i1, DWORD i2, DWORD i3)
     ib[(*ci)++] = i3;
 }
 
+unsigned LevelShift(unsigned level, bool up)
+{
+    static unsigned half = 1 + 2 * (TESSELATE_LEVEL-1)*TESSELATE_LEVEL;
+    static unsigned middle = 2 * half;
+
+    if (level != TESSELATE_LEVEL)
+        // first we choose between up and down than we return 0 for zero-level
+        // else by the formula
+        return ( up ? 0 : half ) + ( level == 0 ? 0 : ( 1 + 2 * level*(level - 1) ) );
+    else
+        return 2*half;
+}
+
+DWORD AbsIndex(bool up, unsigned level, unsigned quarter, unsigned index)
+{
+    // sewing ccw and cw
+    return LevelShift(level, up) + (
+        (level == 0) ? 0 :
+            ( up ?
+                (quarter*level + index) :
+                ((quarter+1)*level - index)
+            ) % (4*level)
+   );
+}
+
+DWORD FindOrCreate(Vertex *vb, bool up, unsigned level, unsigned quarter, unsigned index, D3DXVECTOR3 v)
+{
+    DWORD abs_index = AbsIndex(up, level, quarter, index);
+    if (vb[abs_index].color == 0) // unitialized vertex
+        vb[abs_index] = Vertex(v);
+    return abs_index;
+}
+
 void Tesselate(Vertex *vb, DWORD *ib)
 {
     unsigned ci = 0; // current index
-    unsigned cv = 0; // current vertex
 
-    const unsigned sides[][4] = {
-        {4, 0, 3, 1},
-        {4, 2, 1, 1},
-        {5, 0, 1, 1},
-        {5, 2, 3, 1},
-        {4, 1, 0, 0},
-        {4, 3, 2, 0},
-        {5, 1, 2, 0},
-        {5, 3, 0, 0}
+    memset(vb, 0, VERTICES_COUNT * sizeof(vb[0]));
+
+    const unsigned sides[][3] = {
+        {4, 0, 1},
+        {4, 1, 2},
+        {4, 2, 3},
+        {4, 3, 0},
+        {5, 0, 3},
+        {5, 3, 2},
+        {5, 2, 1},
+        {5, 1, 0}
     };
     for(int j = 0; j < sizeof(sides)/sizeof(sides[0]); ++j)
     {
+        bool up = ( sides[j][0] == 4 );
+        unsigned q = sides[j][up ? 1 : 2];
         D3DXVECTOR3 top = INITIAL_PYRAMID[sides[j][0]].v;
         D3DXVECTOR3 to_left = (INITIAL_PYRAMID[sides[j][1]].v - top)/TESSELATE_LEVEL;
         D3DXVECTOR3 to_right = (INITIAL_PYRAMID[sides[j][2]].v - top)/TESSELATE_LEVEL;
-        vb[cv++] = top;
+        FindOrCreate(vb, up, 0, q, 0, top);
 
-        for (int level = 1; level <= TESSELATE_LEVEL; ++level)
+        for (unsigned l = 1; l <= TESSELATE_LEVEL; ++l)
         {
-            vb[cv] = vb[cv-level].v + to_left;
-            for (int i = 1; i < level; ++i)
+            unsigned a = AbsIndex(up, l-1, q, 0);
+            FindOrCreate(vb, up, l, q, 0, vb[AbsIndex(up, l-1, q, 0)].v + to_left);
+            for (unsigned i = 1; i < l; ++i)
             {
-                vb[cv + i] = vb[cv-level + i-1].v + to_right;
-                Add3Indices(ib, &ci, cv + i, cv-level + i-1, cv + i-1);
-                Add3Indices(ib, &ci, cv + i, cv-level + i, cv-level + i-1);
+                a = AbsIndex(up, l-1, q, i-1);
+                FindOrCreate(vb, up, l, q, i, vb[AbsIndex(up, l-1, q, i-1)].v + to_right);
+                Add3Indices(ib, &ci,
+                    AbsIndex(up, l, q, i),
+                    AbsIndex(up, l-1, q, i-1),
+                    AbsIndex(up, l, q, i-1));
+                Add3Indices(ib, &ci,
+                    AbsIndex(up, l, q, i),
+                    AbsIndex(up, l-1, q, i), 
+                    AbsIndex(up, l-1, q, i-1));
             }
-            vb[cv + level] = vb[cv - 1].v + to_right;
-            Add3Indices(ib, &ci, cv + level, cv - 1, cv + level-1);
-            cv += level+1;
+            a = AbsIndex(up, l-1, q, l-1);
+            FindOrCreate(vb, up, l, q, l, vb[AbsIndex(up, l-1, q, l-1)].v + to_right);
+            Add3Indices(ib, &ci,
+                AbsIndex(up, l, q, l),
+                AbsIndex(up, l-1, q, l-1),
+                AbsIndex(up, l, q, l-1));
         }
     }
 }
