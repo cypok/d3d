@@ -109,11 +109,11 @@ void OK(HRESULT result)
         TCHAR buffer[] = _T("DirectX error occured: 0x00000000");
         // all constants are calculated from the previous line
         #ifdef UNICODE
-            swprintf(buffer+25, 8+1, L"%08x", result);
+            swprintf(buffer+sizeof(buffer)/sizeof(buffer[0])-9, 8+1, L"%08x", result);
         #else
-            sprintf(buffer+25, 8+1, "%08x", result);
+            sprintf(buffer+sizeof(buffer)/sizeof(buffer[0])-9, 8+1, "%08x", result);
         #endif
-        MessageBox(NULL, buffer, L"ERROR", MB_ICONERROR | MB_OK);
+        MessageBox(NULL, buffer, _T("ERROR"), MB_ICONERROR | MB_OK);
         throw std::exception();
     }
 }
