@@ -140,14 +140,6 @@ void ReleaseInterface(IUnknown *x)
     if(x != NULL)
         x->Release();
 }
-//DWORD MixColors(D3DCOLOR c1, D3DCOLOR c2)
-//{
-//    return D3DCOLOR_XRGB(
-//                ((c1 & 0xff0000) + (c2 & 0xff0000)) >> 17,
-//                ((c1 & 0xff00)   + (c2 & 0xff00)) >> 9,
-//                ((c1 & 0xff)     + (c2 & 0xff)) >> 1
-//           );
-//}
 DWORD RandColor()
 {
     return D3DCOLOR_XRGB(rand()%256, rand()%256, rand()%256);
