@@ -41,7 +41,7 @@ struct RS
 };
 const RS RENDER_STATES[] = {
     { D3DRS_FILLMODE, D3DFILL_WIREFRAME },
-    { D3DRS_CULLMODE, D3DCULL_NONE },
+    //{ D3DRS_CULLMODE, D3DCULL_NONE },
 };
 
 const int WINDOW_WIDTH = 700;
@@ -227,19 +227,19 @@ void Tesselate(Vertex *vb, DWORD *ib)
                 FindOrCreate(vb, up, l, q, i, vb[AbsIndex(up, l-1, q, i-1)].v + to_right);
                 Add3Indices(ib, &ci,
                     AbsIndex(up, l, q, i),
-                    AbsIndex(up, l-1, q, i-1),
-                    AbsIndex(up, l, q, i-1));
+                    AbsIndex(up, l, q, i-1),
+                    AbsIndex(up, l-1, q, i-1));
                 Add3Indices(ib, &ci,
                     AbsIndex(up, l, q, i),
-                    AbsIndex(up, l-1, q, i), 
-                    AbsIndex(up, l-1, q, i-1));
+                    AbsIndex(up, l-1, q, i-1), 
+                    AbsIndex(up, l-1, q, i));
             }
             a = AbsIndex(up, l-1, q, l-1);
             FindOrCreate(vb, up, l, q, l, vb[AbsIndex(up, l-1, q, l-1)].v + to_right);
             Add3Indices(ib, &ci,
                 AbsIndex(up, l, q, l),
-                AbsIndex(up, l-1, q, l-1),
-                AbsIndex(up, l, q, l-1));
+                AbsIndex(up, l, q, l-1),
+                AbsIndex(up, l-1, q, l-1));
         }
     }
 }
