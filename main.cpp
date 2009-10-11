@@ -41,11 +41,12 @@ struct RS
 };
 const RS RENDER_STATES[] = {
     { D3DRS_FILLMODE, D3DFILL_WIREFRAME },
-    //{ D3DRS_CULLMODE, D3DCULL_NONE },
+    { D3DRS_CULLMODE, D3DCULL_NONE },
 };
 
 const int WINDOW_WIDTH = 700;
 const int WINDOW_HEIGHT = 700;
+const unsigned SPF_FRAMES_NUMBER = 100;
 
 const float SPEED = 20.0f;
 
@@ -351,10 +352,48 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
     OK( device->SetVertexShaderConstantF(MATRIX_REG, projMatrix * viewMatrix, WORLD_DIMENSION + 1) );
 }
 
+void ShowSPF(double spf)
+{
+    spf /= SPF_FRAMES_NUMBER;
+    TCHAR spf_s[20]; // enough for storing double
+    #ifdef UNICODE
+        swprintf(spf_s, 19, _T("%g"), spf);
+    #else
+        sprintf(spf_s, 19, _T("%g"), spf);
+    #endif
+    MessageBox(NULL, spf_s, _T("Seconds per frame"), MB_ICONINFORMATION | MB_OK);
+
+}
+
 void Render(Device *device,
             IDirect3DVertexBuffer9 *vertex_buffer, IDirect3DIndexBuffer9 *index_buffer,
             IDirect3DVertexShader9 *vertex_shader, IDirect3DVertexDeclaration9 *vertex_declaration)
 {
+    static LARGE_INTEGER freq;
+    static LARGE_INTEGER counter_prev, counter_now;
+    static bool first_run = true;
+    static unsigned render_counter = 0;
+
+    ++render_counter;
+
+    if (first_run)
+    {
+        if (QueryPerformanceFrequency(&freq) == 0)
+            throw std::exception("Cannot get perfomance frequancy");
+
+        QueryPerformanceCounter(&counter_now);
+        first_run = false;
+    }
+
+    if (render_counter % SPF_FRAMES_NUMBER == 0)
+    {
+        counter_prev = counter_now;
+        QueryPerformanceCounter(&counter_now);
+        ShowSPF(static_cast<double>(counter_now.QuadPart - counter_prev.QuadPart) / static_cast<double>(freq.QuadPart));
+    }
+
+    
+
     OK( device->BeginScene() );
 
     OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, GRAY, 1.0f, 0 ) );
