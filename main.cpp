@@ -15,22 +15,38 @@ const DWORD GRAY = D3DCOLOR_XRGB( 128, 128, 128);
 
 DWORD RandColor();
 
+const unsigned BONES_COUNT = 2;
+const D3DDECLTYPE BONES_WEIGHTS_TYPE = D3DDECLTYPE_FLOAT2;
+
 struct Vertex
 {
     D3DXVECTOR3 v;
     DWORD color;
+    float weights[BONES_COUNT];
 
     Vertex(D3DXVECTOR3 v = D3DXVECTOR3(0, 0, 0)) : v(v)
     {
         color = RandColor();
+        weights[0] = 1;
+        weights[1] = 0;
     }
-    Vertex(D3DXVECTOR3 v, DWORD color) : v(v), color(color) {}
+    void set_weight(float w)
+    {
+        weights[0] = w;
+        weights[1] = 1 - w;
+    }
+    Vertex(D3DXVECTOR3 v, DWORD color) : v(v), color(color)
+    {
+        weights[0] = 1;
+        weights[1] = 0;
+    }
 };
 
 const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 {
     {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
     {0, 12, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
+    {0, 16, BONES_WEIGHTS_TYPE, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
     D3DDECL_END()
 };
 
@@ -40,35 +56,26 @@ struct RS
     DWORD value;
 };
 const RS RENDER_STATES[] = {
-    { D3DRS_FILLMODE, D3DFILL_WIREFRAME },
-    //{ D3DRS_CULLMODE, D3DCULL_NONE },
+    //{ D3DRS_FILLMODE, D3DFILL_WIREFRAME },
+    { D3DRS_CULLMODE, D3DCULL_NONE },
 };
 
 const int WINDOW_WIDTH = 700;
 const int WINDOW_HEIGHT = 700;
 
-const float SPEED = 20.0f;
+const unsigned SPEED = 5;
 
-const unsigned TESSELATE_LEVEL = 8;
-//const bool TESSELATE_RANDOM_COLORS = true;
-const unsigned VERTICES_COUNT = 2 * (1 + 2 * TESSELATE_LEVEL*TESSELATE_LEVEL); // it's math
-const unsigned INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL; // it's too
-
-const Vertex INITIAL_PYRAMID[] = {
-    Vertex( D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ) ),
-    Vertex( D3DXVECTOR3(  1.0f, -1.0f,  0.0f       ) ),
-    Vertex( D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ) ),
-    Vertex( D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ) ),
-    Vertex( D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ) ),
-    Vertex( D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ) ),
-};
-const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
-const float SPHERA_RADIUS = sqrtf(2.0);
+const float CYLINDER_HEIGHT = 4.0f;
+const float CYLINDER_RADIUS = 2.0f;
+const unsigned VERTICAL_GRANULARITY = 15;
+const unsigned HORIZONTAL_GRANULARITY = 10;
+const unsigned VERTICES_COUNT = (VERTICAL_GRANULARITY + 1) * HORIZONTAL_GRANULARITY;
+const unsigned INDICES_COUNT = (HORIZONTAL_GRANULARITY + 1) * 2 * VERTICAL_GRANULARITY;
 
 enum {
-    TIME_REG = 0,
-    RADIUS_REG = 1,
-    MATRIX_REG = 2
+    MATRIX_REG = 0,
+    BONE_MATRIX1_REG = 4,
+    BONE_MATRIX2_REG = 8,
 };
 
 unsigned WORLD_DIMENSION = 3;
@@ -144,95 +151,38 @@ DWORD RandColor()
 {
     return D3DCOLOR_XRGB(rand()%256, rand()%256, rand()%256);
 }
-void Add3Indices(DWORD *ib, unsigned *ci, DWORD i1, DWORD i2, DWORD i3)
+
+void CreateCylinder(Vertex *vb, DWORD *ib)
 {
-    ib[(*ci)++] = i1;
-    ib[(*ci)++] = i2;
-    ib[(*ci)++] = i3;
-}
+    float delta_z = CYLINDER_HEIGHT/VERTICAL_GRANULARITY;
+    float delta_phi = 2*D3DX_PI/HORIZONTAL_GRANULARITY;
 
-unsigned LevelShift(unsigned level, bool up)
-{
-    static unsigned half = 1 + 2 * (TESSELATE_LEVEL-1)*TESSELATE_LEVEL;
-    static unsigned middle = 2 * half;
+    unsigned ci = 0; // current index index for adding
 
-    if (level != TESSELATE_LEVEL)
-        // first we choose between up and down than we return 0 for zero-level
-        // else by the formula
-        return ( up ? 0 : half ) + ( level == 0 ? 0 : ( 1 + 2 * level*(level - 1) ) );
-    else
-        return 2*half;
-}
-
-DWORD AbsIndex(bool up, unsigned level, unsigned quarter, unsigned index)
-{
-    // sewing ccw and cw
-    return LevelShift(level, up) + (
-        (level == 0) ? 0 :
-            ( up ?
-                (quarter*level + index) :
-                ((quarter+1)*level - index)
-            ) % (4*level)
-   );
-}
-
-DWORD FindOrCreate(Vertex *vb, bool up, unsigned level, unsigned quarter, unsigned index, D3DXVECTOR3 v)
-{
-    DWORD abs_index = AbsIndex(up, level, quarter, index);
-    if (vb[abs_index].color == 0) // unitialized vertex
-        vb[abs_index] = Vertex(v);
-    return abs_index;
-}
-
-void Tesselate(Vertex *vb, DWORD *ib)
-{
-    unsigned ci = 0; // current index
-
-    memset(vb, 0, VERTICES_COUNT * sizeof(vb[0]));
-
-    const unsigned sides[][3] = {
-        {4, 0, 1},
-        {4, 1, 2},
-        {4, 2, 3},
-        {4, 3, 0},
-        {5, 0, 3},
-        {5, 3, 2},
-        {5, 2, 1},
-        {5, 1, 0}
-    };
-    for(int j = 0; j < sizeof(sides)/sizeof(sides[0]); ++j)
+    for (unsigned i = 0; i < VERTICAL_GRANULARITY; ++i)
     {
-        bool up = ( sides[j][0] == 4 );
-        unsigned q = sides[j][up ? 1 : 2];
-        D3DXVECTOR3 top = INITIAL_PYRAMID[sides[j][0]].v;
-        D3DXVECTOR3 to_left = (INITIAL_PYRAMID[sides[j][1]].v - top)/TESSELATE_LEVEL;
-        D3DXVECTOR3 to_right = (INITIAL_PYRAMID[sides[j][2]].v - top)/TESSELATE_LEVEL;
-        FindOrCreate(vb, up, 0, q, 0, top);
-
-        for (unsigned l = 1; l <= TESSELATE_LEVEL; ++l)
+        for (unsigned j = 0; j < HORIZONTAL_GRANULARITY+1; ++j)
         {
-            unsigned a = AbsIndex(up, l-1, q, 0);
-            FindOrCreate(vb, up, l, q, 0, vb[AbsIndex(up, l-1, q, 0)].v + to_left);
-            for (unsigned i = 1; i < l; ++i)
-            {
-                a = AbsIndex(up, l-1, q, i-1);
-                FindOrCreate(vb, up, l, q, i, vb[AbsIndex(up, l-1, q, i-1)].v + to_right);
-                Add3Indices(ib, &ci,
-                    AbsIndex(up, l, q, i),
-                    AbsIndex(up, l, q, i-1),
-                    AbsIndex(up, l-1, q, i-1));
-                Add3Indices(ib, &ci,
-                    AbsIndex(up, l, q, i),
-                    AbsIndex(up, l-1, q, i-1), 
-                    AbsIndex(up, l-1, q, i));
-            }
-            a = AbsIndex(up, l-1, q, l-1);
-            FindOrCreate(vb, up, l, q, l, vb[AbsIndex(up, l-1, q, l-1)].v + to_right);
-            Add3Indices(ib, &ci,
-                AbsIndex(up, l, q, l),
-                AbsIndex(up, l, q, l-1),
-                AbsIndex(up, l-1, q, l-1));
+            unsigned shift = 0;
+            if (j < HORIZONTAL_GRANULARITY)
+                shift = i*HORIZONTAL_GRANULARITY + j;
+            else
+                shift = i*HORIZONTAL_GRANULARITY;
+
+            vb[shift] =   D3DXVECTOR3(CYLINDER_RADIUS*cosf(delta_phi*j),
+                                      CYLINDER_RADIUS*sinf(delta_phi*j),
+                                      -CYLINDER_HEIGHT/2 + delta_z*i);
+            vb[shift+HORIZONTAL_GRANULARITY] = D3DXVECTOR3(CYLINDER_RADIUS*cosf(delta_phi*j),
+                                      CYLINDER_RADIUS*sinf(delta_phi*j),
+                                      -CYLINDER_HEIGHT/2 + delta_z*(i+1));
+
+            vb[shift].set_weight(static_cast<float>(i)/VERTICAL_GRANULARITY);
+            vb[shift+HORIZONTAL_GRANULARITY].set_weight(static_cast<float>(i+1)/VERTICAL_GRANULARITY);
+            
+            ib[ci++] = shift;
+            ib[ci++] = shift+HORIZONTAL_GRANULARITY;
         }
+
     }
 }
 
@@ -268,7 +218,7 @@ void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIn
              Vertex *vb, DWORD *ib)
 {
     // RUN!
-    Tesselate(vb, ib);
+    CreateCylinder(vb, ib);
 
     unsigned v_size = VERTICES_COUNT*sizeof(Vertex);
     unsigned i_size = INDICES_COUNT*sizeof(DWORD);
@@ -300,16 +250,7 @@ void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_dec
     ReleaseInterface(code);
 }
 
-void SetTimeToShader(Device *device, LONG time)
-{
-    // time -> 0..1
-    D3DXVECTOR4 v((1.0f + sinf(D3DXToRadian( static_cast<float>(time*SPEED) )))/2, 0.0f, 0.0f, 0.0f);
-    OK( device->SetVertexShaderConstantF(TIME_REG, v, 1) );
-    v.x = SPHERA_RADIUS;
-    OK( device->SetVertexShaderConstantF(RADIUS_REG, v, 1) );
-}
-
-void CalcMatrix(Device *device, float rho, float tetha, float phi)
+void CalcMatrix(Device *device, float rho, float tetha, float phi, LONG time)
 {   
     // View Matrix
     D3DXVECTOR3 eye(
@@ -349,6 +290,23 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
     );
 
     OK( device->SetVertexShaderConstantF(MATRIX_REG, projMatrix * viewMatrix, WORLD_DIMENSION + 1) );
+
+    D3DXMATRIX static_bone(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    );
+    OK( device->SetVertexShaderConstantF(BONE_MATRIX1_REG, static_bone, WORLD_DIMENSION + 1) );
+
+    float alpha = sinf(D3DX_PI*static_cast<float>(SPEED*time % 200)/100)*D3DX_PI/6;
+    D3DXMATRIX rotating_bone(
+        cosf(alpha), 0, sinf(alpha), 0,
+        0, 1, 0, 0,
+        -sinf(alpha), 0, cosf(alpha), 0,
+        0, 0, 0, 1
+    );
+    OK( device->SetVertexShaderConstantF(BONE_MATRIX2_REG, rotating_bone, WORLD_DIMENSION + 1) );
 }
 
 void Render(Device *device,
@@ -362,7 +320,7 @@ void Render(Device *device,
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, VERTICES_COUNT, 0, INDICES_COUNT/3) );
+    OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP, 0, 0, VERTICES_COUNT, 0, INDICES_COUNT-2) );
 
     OK( device->EndScene() );
 
@@ -438,11 +396,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             }
             else
             {
-                SetTimeToShader(device, GetTime(hWnd));
                 CalcMatrix(device,
                     GetClassFloat(hWnd, RHO),
                     GetClassFloat(hWnd, THETA),
-                    GetClassFloat(hWnd, PHI)
+                    GetClassFloat(hWnd, PHI),
+                    GetTime(hWnd)
                 );
                 Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration);
             }
