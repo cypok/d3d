@@ -66,6 +66,8 @@ const int WINDOW_HEIGHT = 700;
 const unsigned SPEED = 5;
 const float ROTATING_ANGLE = D3DX_PI/8;
 
+const unsigned TIME_PERIOD = 200;
+
 const float CYLINDER_HEIGHT = 4.0f;
 const float CYLINDER_RADIUS = 1.0f;
 const unsigned VERTICAL_GRANULARITY = 15;
@@ -300,7 +302,7 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi, LONG time)
     );
     OK( device->SetVertexShaderConstantF(BONE_MATRIX1_REG, static_bone, WORLD_DIMENSION + 1) );
 
-    float alpha = sinf(D3DX_PI*static_cast<float>(SPEED*time % 200)/100)*ROTATING_ANGLE;
+    float alpha = sinf(D3DX_PI * SPEED * (time % TIME_PERIOD)/TIME_PERIOD)*ROTATING_ANGLE;
     D3DXMATRIX rotating_bone(
         cosf(alpha), 0, -sinf(alpha), 0,
         0, 1, 0, 0,
