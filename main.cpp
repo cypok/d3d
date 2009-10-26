@@ -64,9 +64,10 @@ const int WINDOW_WIDTH = 700;
 const int WINDOW_HEIGHT = 700;
 
 const unsigned SPEED = 5;
+const float ROTATING_ANGLE = D3DX_PI/8;
 
 const float CYLINDER_HEIGHT = 4.0f;
-const float CYLINDER_RADIUS = 2.0f;
+const float CYLINDER_RADIUS = 1.0f;
 const unsigned VERTICAL_GRANULARITY = 15;
 const unsigned HORIZONTAL_GRANULARITY = 10;
 const unsigned VERTICES_COUNT = (VERTICAL_GRANULARITY + 1) * HORIZONTAL_GRANULARITY;
@@ -97,9 +98,9 @@ struct Coord
 
 const Coord COORDS[] = {
     /* MIN */       /* MAX */       /* DELTA */     /* INITIAL */
-    { 3.0f,         10.0f,          0.25f,          6.0f      }, // RHO
+    { 3.0f,         10.0f,          0.25f,          10.0f      }, // RHO
     { D3DX_PI/8,    D3DX_PI*7/8,    D3DX_PI/24,     D3DX_PI*11/24 }, // THETA
-    { -1e37f,       1e37f,          D3DX_PI/24,     0.0f      }  // PHI
+    { -1e37f,       1e37f,          D3DX_PI/24,     D3DX_PI/2     }  // PHI
 };
 
 const unsigned TIME_VALUE_INDEX = 12;
@@ -171,13 +172,13 @@ void CreateCylinder(Vertex *vb, DWORD *ib)
 
             vb[shift] =   D3DXVECTOR3(CYLINDER_RADIUS*cosf(delta_phi*j),
                                       CYLINDER_RADIUS*sinf(delta_phi*j),
-                                      -CYLINDER_HEIGHT/2 + delta_z*i);
+                                      delta_z*i);
             vb[shift+HORIZONTAL_GRANULARITY] = D3DXVECTOR3(CYLINDER_RADIUS*cosf(delta_phi*j),
                                       CYLINDER_RADIUS*sinf(delta_phi*j),
-                                      -CYLINDER_HEIGHT/2 + delta_z*(i+1));
+                                      delta_z*(i+1));
 
-            vb[shift].set_weight(static_cast<float>(i)/VERTICAL_GRANULARITY);
-            vb[shift+HORIZONTAL_GRANULARITY].set_weight(static_cast<float>(i+1)/VERTICAL_GRANULARITY);
+            vb[shift].set_weight(1.0f-static_cast<float>(i)/VERTICAL_GRANULARITY);
+            vb[shift+HORIZONTAL_GRANULARITY].set_weight(1.0f-static_cast<float>(i+1)/VERTICAL_GRANULARITY);
             
             ib[ci++] = shift;
             ib[ci++] = shift+HORIZONTAL_GRANULARITY;
@@ -299,11 +300,11 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi, LONG time)
     );
     OK( device->SetVertexShaderConstantF(BONE_MATRIX1_REG, static_bone, WORLD_DIMENSION + 1) );
 
-    float alpha = sinf(D3DX_PI*static_cast<float>(SPEED*time % 200)/100)*D3DX_PI/6;
+    float alpha = sinf(D3DX_PI*static_cast<float>(SPEED*time % 200)/100)*ROTATING_ANGLE;
     D3DXMATRIX rotating_bone(
-        cosf(alpha), 0, sinf(alpha), 0,
+        cosf(alpha), 0, -sinf(alpha), 0,
         0, 1, 0, 0,
-        -sinf(alpha), 0, cosf(alpha), 0,
+        sinf(alpha), 0, cosf(alpha), 0,
         0, 0, 0, 1
     );
     OK( device->SetVertexShaderConstantF(BONE_MATRIX2_REG, rotating_bone, WORLD_DIMENSION + 1) );
