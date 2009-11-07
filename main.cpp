@@ -71,17 +71,16 @@ const float SPHERA_RADIUS = sqrtf(2.0);
 enum {
     TIME_REG = 0,
     RADIUS_REG = 1,
-    MATRIX_REG = 2
+    MATRIX_REG = 2,
+    PYRAMID_ROTATION_MATRIX_REG = 6
 };
 
 unsigned WORLD_DIMENSION = 3;
 
-enum SphericalCoords
-{
-    RHO = 0,
-    THETA = 1,
-    PHI = 2
-};
+const unsigned RHO = 0;
+const unsigned THETA = 1;
+const unsigned PHI = 2;
+const unsigned PYRAMID_PHI = 3;
 
 struct Coord
 {
@@ -93,12 +92,13 @@ struct Coord
 
 const Coord COORDS[] = {
     /* MIN */       /* MAX */       /* DELTA */     /* INITIAL */
-    { 3.0f,         10.0f,          0.25f,          6.0f      }, // RHO
+    { 3.0f,         10.0f,          0.25f,          6.0f      },     // RHO
     { D3DX_PI/8,    D3DX_PI*7/8,    D3DX_PI/24,     D3DX_PI*11/24 }, // THETA
-    { -1e37f,       1e37f,          D3DX_PI/24,     0.0f      }  // PHI
+    { -1e37f,       1e37f,          D3DX_PI/24,     0.0f      },     // PHI
+    { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      }      // PYRAMID PHI
 };
 
-const unsigned TIME_VALUE_INDEX = 12;
+const unsigned TIME_VALUE_INDEX = 16;
 
 const TCHAR SHADER_FILE[] = _T("shader.vsh");
 
@@ -121,14 +121,14 @@ void OK(HRESULT result)
     }
 }
 
-float GetClassFloat(HWND hWnd, SphericalCoords coord) // GetClassFloat
+float GetClassFloat(HWND hWnd, unsigned index) // GetClassFloat
 {
     static long res;
-    return *reinterpret_cast<float*>(&(res = GetClassLong(hWnd, sizeof(float)*coord)));
+    return *reinterpret_cast<float*>(&(res = GetClassLong(hWnd, sizeof(float)*index)));
 }
-void SetClassFloat(HWND hWnd, SphericalCoords coord, float value) // SetClassFloat
+void SetClassFloat(HWND hWnd, unsigned index, float value) // SetClassFloat
 {
-    SetClassLong(hWnd, sizeof(float)*coord, *reinterpret_cast<LONG*>(&value));
+    SetClassLong(hWnd, sizeof(float)*index, *reinterpret_cast<LONG*>(&value));
 }
 LONG GetTime(HWND hWnd)
 {
@@ -295,7 +295,7 @@ void SetTimeToShader(Device *device, LONG time)
     OK( device->SetVertexShaderConstantF(RADIUS_REG, v, 1) );
 }
 
-void CalcMatrix(Device *device, float rho, float tetha, float phi)
+void CalcMatrix(Device *device, float rho, float tetha, float phi, float pyramid_phi)
 {   
     // View Matrix
     D3DXVECTOR3 eye(
@@ -334,7 +334,16 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi)
         0,      0,      1, 0
     );
 
+    // Pyramid rotation
+    D3DXMATRIX pyramid(
+        cosf(pyramid_phi),  sinf(pyramid_phi), 0, 0,
+        -sinf(pyramid_phi), cosf(pyramid_phi), 0, 0,
+        0,                  0,                 1, 0,
+        0,                  0,                 0, 1
+    );
+
     OK( device->SetVertexShaderConstantF(MATRIX_REG, projMatrix * viewMatrix, WORLD_DIMENSION + 1) );
+    OK( device->SetVertexShaderConstantF(PYRAMID_ROTATION_MATRIX_REG, pyramid, WORLD_DIMENSION + 1) );
 }
 
 void Render(Device *device,
@@ -380,7 +389,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         wcex.cbSize         = sizeof(WNDCLASSEX);
         wcex.style          = CS_HREDRAW | CS_VREDRAW;
         wcex.lpfnWndProc    = WndProc;
-        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG); // here would be stored view coordinates
+        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG)+sizeof(float); // here would be stored view coordinates
         wcex.cbWndExtra     = 0;
         wcex.hInstance      = hInstance;
         wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
@@ -400,6 +409,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         SetClassFloat(hWnd, THETA, COORDS[THETA].initial);
         SetClassFloat(hWnd, PHI, COORDS[PHI].initial);
         SetClassLong(hWnd, TIME_VALUE_INDEX, 0);
+        SetClassFloat(hWnd, PYRAMID_PHI, 0.0f);
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
@@ -428,7 +438,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                 CalcMatrix(device,
                     GetClassFloat(hWnd, RHO),
                     GetClassFloat(hWnd, THETA),
-                    GetClassFloat(hWnd, PHI)
+                    GetClassFloat(hWnd, PHI),
+                    GetClassFloat(hWnd, PYRAMID_PHI)
                 );
                 Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration);
             }
@@ -449,13 +460,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     return (int) msg.wParam;
 }
 
-void IncCoord(HWND hWnd, SphericalCoords coord)
+void IncCoord(HWND hWnd, unsigned coord)
 {
     float var = GetClassFloat(hWnd, coord) + COORDS[coord].delta;
     SetClassFloat(hWnd, coord, min(var, COORDS[coord].max));
 }
 
-void DecCoord(HWND hWnd, SphericalCoords coord)
+void DecCoord(HWND hWnd, unsigned coord)
 {
     float var = GetClassFloat(hWnd, coord) - COORDS[coord].delta;
     SetClassFloat(hWnd, coord, max(var, COORDS[coord].min));
@@ -474,6 +485,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case VK_DOWN:   IncCoord(hWnd, THETA); break;
         case VK_RIGHT:  DecCoord(hWnd, PHI);   break;
         case VK_LEFT:   IncCoord(hWnd, PHI);   break;
+
+        case 'a':
+        case 'A':
+            IncCoord(hWnd, PYRAMID_PHI);
+            break;
+        case 'd':
+        case 'D':
+            DecCoord(hWnd, PYRAMID_PHI);
+            break;
         }
         break;
 
