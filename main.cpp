@@ -20,15 +20,19 @@ const DWORD ALL_COLORS[] = {
 struct Vertex
 {
     D3DXVECTOR3 v;
+    D3DXVECTOR3 norm;
     DWORD color;
 
-    Vertex(D3DXVECTOR3 v = D3DXVECTOR3(), DWORD color = BLACK) : v(v), color(color) {}
+    Vertex( D3DXVECTOR3 v = D3DXVECTOR3(),
+            D3DXVECTOR3 norm = D3DXVECTOR3(1, 0, 0),
+            DWORD color = BLACK              ) : v(v), norm(norm), color(color) {}
 };
 
 const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 {
     {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
-    {0, 12, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
+    {0, 12, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
+    {0, 24, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
     D3DDECL_END()
 };
 
@@ -154,11 +158,11 @@ DWORD AbsIndex(bool up, unsigned level, unsigned quarter, unsigned index)
     return ((up?0:1)*4 + quarter) * one_side_v_count + level*(level+1)/2 + index;
 }
 
-DWORD FindOrCreate(Vertex *vb, bool up, unsigned level, unsigned quarter, unsigned index, D3DXVECTOR3 v)
+DWORD FindOrCreate(Vertex *vb, bool up, unsigned level, unsigned quarter, unsigned index, D3DXVECTOR3 v, D3DXVECTOR3 norm)
 {
     DWORD abs_index = AbsIndex(up, level, quarter, index);
     if (vb[abs_index].color == 0) // unitialized vertex
-        vb[abs_index] = Vertex(v, ALL_COLORS[(up?0:1)*4+quarter]); // PYRAMID_COLOR);
+        vb[abs_index] = Vertex(v, norm, ALL_COLORS[(up?0:1)*4+quarter]); // PYRAMID_COLOR);
     return abs_index;
 }
 
@@ -185,16 +189,20 @@ void Tesselate(Vertex *vb, DWORD *ib)
         D3DXVECTOR3 top = INITIAL_PYRAMID[sides[j][0]];
         D3DXVECTOR3 to_left = (INITIAL_PYRAMID[sides[j][1]] - top)/TESSELATE_LEVEL;
         D3DXVECTOR3 to_right = (INITIAL_PYRAMID[sides[j][2]] - top)/TESSELATE_LEVEL;
-        FindOrCreate(vb, up, 0, q, 0, top);
+        D3DXVECTOR3 norm;
+        D3DXVec3Cross(&norm, &to_right, &to_left);
+        D3DXVec3Normalize(&norm, &norm);
+
+        FindOrCreate(vb, up, 0, q, 0, top, norm);
 
         for (unsigned l = 1; l <= TESSELATE_LEVEL; ++l)
         {
             unsigned a = AbsIndex(up, l-1, q, 0);
-            FindOrCreate(vb, up, l, q, 0, vb[AbsIndex(up, l-1, q, 0)].v + to_left);
+            FindOrCreate(vb, up, l, q, 0, vb[AbsIndex(up, l-1, q, 0)].v + to_left, norm);
             for (unsigned i = 1; i < l; ++i)
             {
                 a = AbsIndex(up, l-1, q, i-1);
-                FindOrCreate(vb, up, l, q, i, vb[AbsIndex(up, l-1, q, i-1)].v + to_right);
+                FindOrCreate(vb, up, l, q, i, vb[AbsIndex(up, l-1, q, i-1)].v + to_right, norm);
                 Add3Indices(ib, &ci,
                     AbsIndex(up, l, q, i),
                     AbsIndex(up, l, q, i-1),
@@ -205,7 +213,7 @@ void Tesselate(Vertex *vb, DWORD *ib)
                     AbsIndex(up, l-1, q, i));
             }
             a = AbsIndex(up, l-1, q, l-1);
-            FindOrCreate(vb, up, l, q, l, vb[AbsIndex(up, l-1, q, l-1)].v + to_right);
+            FindOrCreate(vb, up, l, q, l, vb[AbsIndex(up, l-1, q, l-1)].v + to_right, norm);
             Add3Indices(ib, &ci,
                 AbsIndex(up, l, q, l),
                 AbsIndex(up, l, q, l-1),

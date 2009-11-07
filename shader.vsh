@@ -8,11 +8,13 @@ vs_1_1
 
 
 dcl_position v0             ; vertex
-def c6, 1, 0, 0, 0      ; c6 = 1
+dcl_normal v1               ; normal
+def c6, 1, 0, 0, 0          ; c6 = 1
 
-dcl_color v1                ; color
+dcl_color v2                ; color
 
-mov oD0, v1
+mov oD0, v2
+
 
 ; we need to do this:
 ; oPos = v0 * (1 + t*(R/|v0| - 1))
