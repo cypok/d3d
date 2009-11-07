@@ -40,7 +40,7 @@ struct RS
     DWORD value;
 };
 const RS RENDER_STATES[] = {
-    { D3DRS_FILLMODE, D3DFILL_WIREFRAME },
+  //  { D3DRS_FILLMODE, D3DFILL_WIREFRAME },
     { D3DRS_CULLMODE, D3DCULL_NONE },
 };
 
@@ -50,7 +50,7 @@ const unsigned SPF_FRAMES_NUMBER = 100;
 
 const float SPEED = 20.0f;
 
-const unsigned TESSELATE_LEVEL = 8;
+const unsigned TESSELATE_LEVEL = 10;
 //const bool TESSELATE_RANDOM_COLORS = true;
 const unsigned VERTICES_COUNT = 2 * (1 + 2 * TESSELATE_LEVEL*TESSELATE_LEVEL); // it's math
 const unsigned INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL; // it's too
@@ -253,9 +253,9 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
     params.AutoDepthStencilFormat = D3DFMT_D16;
 
     OK( (*d3d)->CreateDevice(D3DADAPTER_DEFAULT,
-                                    D3DDEVTYPE_REF,
+                                    D3DDEVTYPE_HAL,
                                     hWnd,
-                                    D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+                                    D3DCREATE_HARDWARE_VERTEXPROCESSING,
                                     &params,
                                     device) );
 
@@ -357,12 +357,11 @@ void ShowSPF(double spf)
     spf /= SPF_FRAMES_NUMBER;
     TCHAR spf_s[20]; // enough for storing double
     #ifdef UNICODE
-        swprintf(spf_s, 19, _T("%g"), spf);
+        swprintf(spf_s, 19, _T("%g\n"), spf);
     #else
-        sprintf(spf_s, 19, _T("%g"), spf);
+        sprintf(spf_s, 19, _T("%g\n"), spf);
     #endif
-    MessageBox(NULL, spf_s, _T("Seconds per frame"), MB_ICONINFORMATION | MB_OK);
-
+    OutputDebugString(spf_s);
 }
 
 void Render(Device *device,
@@ -375,6 +374,7 @@ void Render(Device *device,
     static unsigned render_counter = 0;
 
     ++render_counter;
+    static IDirect3DQuery9* pOcclusionQuery = NULL;
 
     if (first_run)
     {
@@ -382,8 +382,10 @@ void Render(Device *device,
             throw std::exception("Cannot get perfomance frequancy");
 
         QueryPerformanceCounter(&counter_now);
+        device->CreateQuery(D3DQUERYTYPE_EVENT, &pOcclusionQuery);
         first_run = false;
     }
+
 
     if (render_counter % SPF_FRAMES_NUMBER == 0)
     {
@@ -392,7 +394,7 @@ void Render(Device *device,
         ShowSPF(static_cast<double>(counter_now.QuadPart - counter_prev.QuadPart) / static_cast<double>(freq.QuadPart));
     }
 
-    
+    pOcclusionQuery->Issue(D3DISSUE_END);   
 
     OK( device->BeginScene() );
 
@@ -406,6 +408,8 @@ void Render(Device *device,
     OK( device->EndScene() );
 
     OK( device->Present(NULL, NULL, NULL, NULL) );
+
+    pOcclusionQuery->Issue(D3DISSUE_END);
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*lpCmdLine*/, int nCmdShow)
@@ -417,8 +421,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     IDirect3DVertexShader9 *vertex_shader = NULL;
     IDirect3DVertexDeclaration9 *vertex_declaration = NULL;
 
-    Vertex vb[VERTICES_COUNT];
-    DWORD ib[INDICES_COUNT];
+    Vertex *vb = new Vertex[VERTICES_COUNT];
+    DWORD *ib = new DWORD[INDICES_COUNT];
 
     MSG msg = {0};
     try
@@ -498,6 +502,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     ReleaseInterface(index_buffer);
     ReleaseInterface(vertex_shader);
     ReleaseInterface(vertex_declaration);
+
+    delete[] vb;
+    delete[] ib;
 
     return (int) msg.wParam;
 }
