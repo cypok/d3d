@@ -12,19 +12,17 @@ const DWORD MAGENTA = D3DCOLOR_XRGB( 255, 0, 255);
 const DWORD YELLOW = D3DCOLOR_XRGB( 255, 255, 0);
 const DWORD WHITE = D3DCOLOR_XRGB( 255, 255, 255);
 const DWORD GRAY = D3DCOLOR_XRGB( 128, 128, 128);
-
-DWORD RandColor();
+const DWORD ALL_COLORS[] = {
+    BLACK, BLUE, GREEN, CYAN,
+    RED, MAGENTA, YELLOW, WHITE,
+};
 
 struct Vertex
 {
     D3DXVECTOR3 v;
     DWORD color;
 
-    Vertex(D3DXVECTOR3 v = D3DXVECTOR3(0, 0, 0)) : v(v)
-    {
-        color = RandColor();
-    }
-    Vertex(D3DXVECTOR3 v, DWORD color) : v(v), color(color) {}
+    Vertex(D3DXVECTOR3 v = D3DXVECTOR3(), DWORD color = BLACK) : v(v), color(color) {}
 };
 
 const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
@@ -40,27 +38,28 @@ struct RS
     DWORD value;
 };
 const RS RENDER_STATES[] = {
-    { D3DRS_FILLMODE, D3DFILL_WIREFRAME },
-    //{ D3DRS_CULLMODE, D3DCULL_NONE },
+    { D3DRS_FILLMODE, D3DFILL_SOLID },
+    // { D3DRS_CULLMODE, D3DCULL_NONE },
 };
 
 const int WINDOW_WIDTH = 700;
 const int WINDOW_HEIGHT = 700;
 
-const float SPEED = 20.0f;
+const float MORPHING_SPEED = 20.0f;
 
 const unsigned TESSELATE_LEVEL = 8;
 //const bool TESSELATE_RANDOM_COLORS = true;
-const unsigned VERTICES_COUNT = 2 * (1 + 2 * TESSELATE_LEVEL*TESSELATE_LEVEL); // it's math
-const unsigned INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL; // it's too
+const unsigned PYRAMID_VERTICES_COUNT = 4 * (TESSELATE_LEVEL + 1) * (TESSELATE_LEVEL + 2); // it's math
+const unsigned PYRAMID_INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL; // it's too
+const DWORD PYRAMID_COLOR = MAGENTA;
 
-const Vertex INITIAL_PYRAMID[] = {
-    Vertex( D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ) ),
-    Vertex( D3DXVECTOR3(  1.0f, -1.0f,  0.0f       ) ),
-    Vertex( D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ) ),
-    Vertex( D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ) ),
-    Vertex( D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ) ),
-    Vertex( D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ) ),
+const D3DXVECTOR3 INITIAL_PYRAMID[] = {
+    D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ),
+    D3DXVECTOR3(  1.0f, -1.0f,  0.0f       ),
+    D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ),
+    D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ),
+    D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ),
+    D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ),
 };
 const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
 const float SPHERA_RADIUS = sqrtf(2.0);
@@ -140,10 +139,8 @@ void ReleaseInterface(IUnknown *x)
     if(x != NULL)
         x->Release();
 }
-DWORD RandColor()
-{
-    return D3DCOLOR_XRGB(rand()%256, rand()%256, rand()%256);
-}
+
+// PYRAMID TESSELATION ----------------------------------------------------------------------------------
 void Add3Indices(DWORD *ib, unsigned *ci, DWORD i1, DWORD i2, DWORD i3)
 {
     ib[(*ci)++] = i1;
@@ -151,36 +148,17 @@ void Add3Indices(DWORD *ib, unsigned *ci, DWORD i1, DWORD i2, DWORD i3)
     ib[(*ci)++] = i3;
 }
 
-unsigned LevelShift(unsigned level, bool up)
-{
-    static unsigned half = 1 + 2 * (TESSELATE_LEVEL-1)*TESSELATE_LEVEL;
-    static unsigned middle = 2 * half;
-
-    if (level != TESSELATE_LEVEL)
-        // first we choose between up and down than we return 0 for zero-level
-        // else by the formula
-        return ( up ? 0 : half ) + ( level == 0 ? 0 : ( 1 + 2 * level*(level - 1) ) );
-    else
-        return 2*half;
-}
-
 DWORD AbsIndex(bool up, unsigned level, unsigned quarter, unsigned index)
 {
-    // sewing ccw and cw
-    return LevelShift(level, up) + (
-        (level == 0) ? 0 :
-            ( up ?
-                (quarter*level + index) :
-                ((quarter+1)*level - index)
-            ) % (4*level)
-   );
+    const unsigned one_side_v_count = PYRAMID_VERTICES_COUNT / 8;
+    return ((up?0:1)*4 + quarter) * one_side_v_count + level*(level+1)/2 + index;
 }
 
 DWORD FindOrCreate(Vertex *vb, bool up, unsigned level, unsigned quarter, unsigned index, D3DXVECTOR3 v)
 {
     DWORD abs_index = AbsIndex(up, level, quarter, index);
     if (vb[abs_index].color == 0) // unitialized vertex
-        vb[abs_index] = Vertex(v);
+        vb[abs_index] = Vertex(v, ALL_COLORS[(up?0:1)*4+quarter]); // PYRAMID_COLOR);
     return abs_index;
 }
 
@@ -188,7 +166,7 @@ void Tesselate(Vertex *vb, DWORD *ib)
 {
     unsigned ci = 0; // current index
 
-    memset(vb, 0, VERTICES_COUNT * sizeof(vb[0]));
+    memset(vb, 0, PYRAMID_VERTICES_COUNT * sizeof(vb[0]));
 
     const unsigned sides[][3] = {
         {4, 0, 1},
@@ -204,9 +182,9 @@ void Tesselate(Vertex *vb, DWORD *ib)
     {
         bool up = ( sides[j][0] == 4 );
         unsigned q = sides[j][up ? 1 : 2];
-        D3DXVECTOR3 top = INITIAL_PYRAMID[sides[j][0]].v;
-        D3DXVECTOR3 to_left = (INITIAL_PYRAMID[sides[j][1]].v - top)/TESSELATE_LEVEL;
-        D3DXVECTOR3 to_right = (INITIAL_PYRAMID[sides[j][2]].v - top)/TESSELATE_LEVEL;
+        D3DXVECTOR3 top = INITIAL_PYRAMID[sides[j][0]];
+        D3DXVECTOR3 to_left = (INITIAL_PYRAMID[sides[j][1]] - top)/TESSELATE_LEVEL;
+        D3DXVECTOR3 to_right = (INITIAL_PYRAMID[sides[j][2]] - top)/TESSELATE_LEVEL;
         FindOrCreate(vb, up, 0, q, 0, top);
 
         for (unsigned l = 1; l <= TESSELATE_LEVEL; ++l)
@@ -270,8 +248,8 @@ void InitVIB(Device *device, IDirect3DVertexBuffer9 **vertex_buffer, IDirect3DIn
     // RUN!
     Tesselate(vb, ib);
 
-    unsigned v_size = VERTICES_COUNT*sizeof(Vertex);
-    unsigned i_size = INDICES_COUNT*sizeof(DWORD);
+    unsigned v_size = PYRAMID_VERTICES_COUNT*sizeof(Vertex);
+    unsigned i_size = PYRAMID_INDICES_COUNT*sizeof(DWORD);
 
     // initializing vertex and index buffers
     OK( device->CreateVertexBuffer(v_size, 0, 0, D3DPOOL_MANAGED, vertex_buffer, NULL) );
@@ -303,7 +281,7 @@ void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_dec
 void SetTimeToShader(Device *device, LONG time)
 {
     // time -> 0..1
-    D3DXVECTOR4 v((1.0f + sinf(D3DXToRadian( static_cast<float>(time*SPEED) )))/2, 0.0f, 0.0f, 0.0f);
+    D3DXVECTOR4 v((1.0f + sinf(D3DXToRadian( static_cast<float>(time*MORPHING_SPEED) )))/2, 0.0f, 0.0f, 0.0f);
     OK( device->SetVertexShaderConstantF(TIME_REG, v, 1) );
     v.x = SPHERA_RADIUS;
     OK( device->SetVertexShaderConstantF(RADIUS_REG, v, 1) );
@@ -362,7 +340,7 @@ void Render(Device *device,
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, VERTICES_COUNT, 0, INDICES_COUNT/3) );
+    OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, PYRAMID_VERTICES_COUNT, 0, PYRAMID_INDICES_COUNT/3) );
 
     OK( device->EndScene() );
 
@@ -378,8 +356,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     IDirect3DVertexShader9 *vertex_shader = NULL;
     IDirect3DVertexDeclaration9 *vertex_declaration = NULL;
 
-    Vertex vb[VERTICES_COUNT];
-    DWORD ib[INDICES_COUNT];
+    Vertex vb[PYRAMID_VERTICES_COUNT];
+    DWORD ib[PYRAMID_INDICES_COUNT];
 
     MSG msg = {0};
     try
