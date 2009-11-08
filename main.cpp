@@ -59,6 +59,7 @@ const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.5f, 0.2f, 0.2f, 0.0f);
 const D3DXVECTOR3   POINT_POSITION(2.0f, 0.0f, -2.0f);
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.2f, 0.5f, 0.2f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.2f, 0.5f, 0.2f, 0.0f);
+const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
 
 
 const float MORPHING_SPEED = 0.0f;
@@ -102,7 +103,8 @@ enum {
     DIRECTIONAL_COLOR_SPECULAR_REG = 67,
     POINT_POSITION_REG = 68,
     POINT_COLOR_DIFFUSE_REG = 69,
-    POINT_COLOR_SPECULAR_REG = 70
+    POINT_COLOR_SPECULAR_REG = 70,
+    POINT_ATTENUATION_FACTOR_REG = 71
 };
 
 unsigned WORLD_DIMENSION = 3;
@@ -403,6 +405,7 @@ void SetLightsToShader(Device *device)
     OK( device->SetVertexShaderConstantF(POINT_POSITION_REG, POINT_POSITION, 1) );
     OK( device->SetVertexShaderConstantF(POINT_COLOR_DIFFUSE_REG, POINT_COLOR_DIFFUSE, 1) );
     OK( device->SetVertexShaderConstantF(POINT_COLOR_SPECULAR_REG, POINT_COLOR_SPECULAR, 1) );
+    OK( device->SetVertexShaderConstantF(POINT_ATTENUATION_FACTOR_REG, POINT_ATTENUATION_FACTOR, 1) );
 }
 
 void Render(Device *device,
