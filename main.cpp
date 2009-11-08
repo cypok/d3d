@@ -49,13 +49,18 @@ const RS RENDER_STATES[] = {
 const int WINDOW_WIDTH = 700;
 const int WINDOW_HEIGHT = 700;
 
-const float MORPHING_SPEED = 20.0f;
+// Light sources!
+const D3DXVECTOR3 DIRECTIONAL_VECTOR(0, -cosf(D3DX_PI/6), -sinf(D3DX_PI/6));
+const D3DXCOLOR DIRECTIONAL_COLOR(1.0f, 1.0f, 1.0f, 1.0f);
 
-const unsigned TESSELATE_LEVEL = 8;
+
+const float MORPHING_SPEED = 2.0f;
+const unsigned MORPHING_TIMER_SPEED = 25;
+const unsigned TESSELATE_LEVEL = 10;
 //const bool TESSELATE_RANDOM_COLORS = true;
 const unsigned PYRAMID_VERTICES_COUNT = 4 * (TESSELATE_LEVEL + 1) * (TESSELATE_LEVEL + 2); // it's math
 const unsigned PYRAMID_INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL; // it's too
-const DWORD PYRAMID_COLOR = MAGENTA;
+const DWORD PYRAMID_COLOR = WHITE;
 
 const D3DXVECTOR3 INITIAL_PYRAMID[] = {
     D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ),
@@ -69,10 +74,17 @@ const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_P
 const float SPHERA_RADIUS = sqrtf(2.0);
 
 enum {
-    TIME_REG = 0,
-    RADIUS_REG = 1,
-    MATRIX_REG = 2,
-    PYRAMID_ROTATION_MATRIX_REG = 6
+    // matrices
+    VIEW_MATRIX_REG = 4,
+    PYRAMID_ROTATION_MATRIX_REG = 8,
+
+    // morphing
+    TIME_REG = 32,
+    RADIUS_REG = 33,
+
+    // light sources
+    DIRECTIONAL_VECTOR_REG = 64,
+    DIRECTIONAL_COLOR_REG = 65,
 };
 
 unsigned WORLD_DIMENSION = 3;
@@ -81,6 +93,8 @@ const unsigned RHO = 0;
 const unsigned THETA = 1;
 const unsigned PHI = 2;
 const unsigned PYRAMID_PHI = 3;
+
+const unsigned TIME_VALUE_INDEX = 16; // in window class memory
 
 struct Coord
 {
@@ -94,11 +108,9 @@ const Coord COORDS[] = {
     /* MIN */       /* MAX */       /* DELTA */     /* INITIAL */
     { 3.0f,         10.0f,          0.25f,          6.0f      },     // RHO
     { D3DX_PI/8,    D3DX_PI*7/8,    D3DX_PI/24,     D3DX_PI*11/24 }, // THETA
-    { -1e37f,       1e37f,          D3DX_PI/24,     0.0f      },     // PHI
+    { -1e37f,       1e37f,          D3DX_PI/24,     D3DX_PI/6 },     // PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      }      // PYRAMID PHI
 };
-
-const unsigned TIME_VALUE_INDEX = 16;
 
 const TCHAR SHADER_FILE[] = _T("shader.vsh");
 
@@ -162,7 +174,9 @@ DWORD FindOrCreate(Vertex *vb, bool up, unsigned level, unsigned quarter, unsign
 {
     DWORD abs_index = AbsIndex(up, level, quarter, index);
     if (vb[abs_index].color == 0) // unitialized vertex
-        vb[abs_index] = Vertex(v, norm, ALL_COLORS[(up?0:1)*4+quarter]); // PYRAMID_COLOR);
+        vb[abs_index] = Vertex(v,
+                               norm,
+                               PYRAMID_COLOR ? PYRAMID_COLOR : ALL_COLORS[(up?0:1)*4+quarter]);
     return abs_index;
 }
 
@@ -288,10 +302,11 @@ void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_dec
 
 void SetTimeToShader(Device *device, LONG time)
 {
-    // time -> 0..1
-    D3DXVECTOR4 v((1.0f + sinf(D3DXToRadian( static_cast<float>(time*MORPHING_SPEED) )))/2, 0.0f, 0.0f, 0.0f);
+    // time: 0..inf -> 0..1
+    D3DXVECTOR4 v;
+    v.x = v.y = v.z = v.w = (1.0f + sinf(D3DXToRadian( static_cast<float>(time*MORPHING_SPEED) )))/2;
     OK( device->SetVertexShaderConstantF(TIME_REG, v, 1) );
-    v.x = SPHERA_RADIUS;
+    v.x = v.y = v.z = v.w = SPHERA_RADIUS;
     OK( device->SetVertexShaderConstantF(RADIUS_REG, v, 1) );
 }
 
@@ -342,8 +357,14 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi, float pyramid
         0,                  0,                 0, 1
     );
 
-    OK( device->SetVertexShaderConstantF(MATRIX_REG, projMatrix * viewMatrix, WORLD_DIMENSION + 1) );
+    OK( device->SetVertexShaderConstantF(VIEW_MATRIX_REG, projMatrix * viewMatrix, WORLD_DIMENSION + 1) );
     OK( device->SetVertexShaderConstantF(PYRAMID_ROTATION_MATRIX_REG, pyramid, WORLD_DIMENSION + 1) );
+}
+
+void SetLightsToShader(Device *device)
+{
+    OK( device->SetVertexShaderConstantF(DIRECTIONAL_VECTOR_REG, DIRECTIONAL_VECTOR, 1) );
+    OK( device->SetVertexShaderConstantF(DIRECTIONAL_COLOR_REG, DIRECTIONAL_COLOR, 1) );
 }
 
 void Render(Device *device,
@@ -373,8 +394,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     IDirect3DVertexShader9 *vertex_shader = NULL;
     IDirect3DVertexDeclaration9 *vertex_declaration = NULL;
 
-    Vertex vb[PYRAMID_VERTICES_COUNT];
-    DWORD ib[PYRAMID_INDICES_COUNT];
+    Vertex *vb = new Vertex[PYRAMID_VERTICES_COUNT];
+    DWORD *ib = new DWORD[PYRAMID_INDICES_COUNT];
 
     MSG msg = {0};
     try
@@ -421,7 +442,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         UpdateWindow(hWnd);
 
         // CREATE TIMER FOR ANIMATION
-        SetTimer(hWnd, 0, 50, NULL);
+        SetTimer(hWnd, 0, MORPHING_TIMER_SPEED, NULL);
 
         // MAIN MESSAGE LOOP:
         MSG msg = {0};
@@ -441,6 +462,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                     GetClassFloat(hWnd, PHI),
                     GetClassFloat(hWnd, PYRAMID_PHI)
                 );
+                SetLightsToShader(device);
                 Render(device, vertex_buffer, index_buffer, vertex_shader, vertex_declaration);
             }
         }
@@ -456,6 +478,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     ReleaseInterface(index_buffer);
     ReleaseInterface(vertex_shader);
     ReleaseInterface(vertex_declaration);
+
+    delete[] vb;
+    delete[] ib;
 
     return (int) msg.wParam;
 }
