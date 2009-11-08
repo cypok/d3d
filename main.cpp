@@ -50,13 +50,16 @@ const int WINDOW_WIDTH = 700;
 const int WINDOW_HEIGHT = 700;
 
 // Light sources!
-const D3DXVECTOR3 DIRECTIONAL_VECTOR(0, -cosf(D3DX_PI/6), -sinf(D3DX_PI/6));
-const D3DXCOLOR DIRECTIONAL_COLOR(1.0f, 1.0f, 1.0f, 1.0f);
+const D3DXVECTOR3   DIRECTIONAL_VECTOR(0, -cosf(D3DX_PI/6), -sinf(D3DX_PI/6));
+const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(1.0f, 1.0f, 1.0f, 0.0f);
+const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(1.0f, 1.0f, 1.0f, 0.0f);
+const D3DXCOLOR     DIRECTIONAL_COLOR_AMBIENT = DIRECTIONAL_COLOR_DIFFUSE;
+const float         DIRECTIONAL_SPECULAR_DEGRADATION = 0.03f;
 
 
-const float MORPHING_SPEED = 2.0f;
+const float MORPHING_SPEED = 5.0f;
 const unsigned MORPHING_TIMER_SPEED = 25;
-const unsigned TESSELATE_LEVEL = 10;
+const unsigned TESSELATE_LEVEL = 50;
 //const bool TESSELATE_RANDOM_COLORS = true;
 const unsigned PYRAMID_VERTICES_COUNT = 4 * (TESSELATE_LEVEL + 1) * (TESSELATE_LEVEL + 2); // it's math
 const unsigned PYRAMID_INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL; // it's too
@@ -75,6 +78,7 @@ const float SPHERA_RADIUS = sqrtf(2.0);
 
 enum {
     // matrices
+    EYE_REG = 3,
     VIEW_MATRIX_REG = 4,
     PYRAMID_ROTATION_MATRIX_REG = 8,
 
@@ -84,7 +88,10 @@ enum {
 
     // light sources
     DIRECTIONAL_VECTOR_REG = 64,
-    DIRECTIONAL_COLOR_REG = 65,
+    DIRECTIONAL_COLOR_DIFFUSE_REG = 65,
+    DIRECTIONAL_COLOR_SPECULAR_REG = 66,
+    DIRECTIONAL_COLOR_AMBIENT_REG = 67,
+    DIRECTIONAL_SPECULAR_DEGRADATION_REG = 68
 };
 
 unsigned WORLD_DIMENSION = 3;
@@ -304,7 +311,7 @@ void SetTimeToShader(Device *device, LONG time)
 {
     // time: 0..inf -> 0..1
     D3DXVECTOR4 v;
-    v.x = v.y = v.z = v.w = (1.0f + sinf(D3DXToRadian( static_cast<float>(time*MORPHING_SPEED) )))/2;
+    v.x = v.y = v.z = v.w = 1.0f;//(1.0f + sinf(D3DXToRadian( static_cast<float>(time*MORPHING_SPEED) )))/2;
     OK( device->SetVertexShaderConstantF(TIME_REG, v, 1) );
     v.x = v.y = v.z = v.w = SPHERA_RADIUS;
     OK( device->SetVertexShaderConstantF(RADIUS_REG, v, 1) );
@@ -357,6 +364,7 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi, float pyramid
         0,                  0,                 0, 1
     );
 
+    OK( device->SetVertexShaderConstantF(EYE_REG, eye, 1) );
     OK( device->SetVertexShaderConstantF(VIEW_MATRIX_REG, projMatrix * viewMatrix, WORLD_DIMENSION + 1) );
     OK( device->SetVertexShaderConstantF(PYRAMID_ROTATION_MATRIX_REG, pyramid, WORLD_DIMENSION + 1) );
 }
@@ -364,7 +372,13 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi, float pyramid
 void SetLightsToShader(Device *device)
 {
     OK( device->SetVertexShaderConstantF(DIRECTIONAL_VECTOR_REG, DIRECTIONAL_VECTOR, 1) );
-    OK( device->SetVertexShaderConstantF(DIRECTIONAL_COLOR_REG, DIRECTIONAL_COLOR, 1) );
+    OK( device->SetVertexShaderConstantF(DIRECTIONAL_COLOR_DIFFUSE_REG, DIRECTIONAL_COLOR_DIFFUSE, 1) );
+    OK( device->SetVertexShaderConstantF(DIRECTIONAL_COLOR_SPECULAR_REG, DIRECTIONAL_COLOR_SPECULAR, 1) );
+    OK( device->SetVertexShaderConstantF(DIRECTIONAL_COLOR_AMBIENT_REG, DIRECTIONAL_COLOR_AMBIENT, 1) );
+    OK( device->SetVertexShaderConstantF(DIRECTIONAL_COLOR_AMBIENT_REG, DIRECTIONAL_COLOR_AMBIENT, 1) );
+    D3DXVECTOR4 v;
+    v.x = v.y = v.z = v.w = 1 / DIRECTIONAL_SPECULAR_DEGRADATION;
+    OK( device->SetVertexShaderConstantF(DIRECTIONAL_SPECULAR_DEGRADATION_REG, v, 1) );
 }
 
 void Render(Device *device,
