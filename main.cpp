@@ -52,14 +52,25 @@ const int WINDOW_HEIGHT = 700;
 // Light sources!
 const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 
-const D3DXVECTOR3   DIRECTIONAL_VECTOR(0.0f, cosf(D3DX_PI/6), -sinf(D3DX_PI/6));
-const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(0.5f, 0.2f, 0.2f, 0.0f);
-const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.5f, 0.2f, 0.2f, 0.0f);
+const D3DXVECTOR3   DIRECTIONAL_VECTOR( sinf(D3DX_PI/6)*cosf(D3DX_PI/4),
+                                        sinf(D3DX_PI/6)*sinf(D3DX_PI/4),
+                                       -cosf(D3DX_PI/6));
+const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(0.7f, 0.2f, 0.2f, 0.0f);
+const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.7f, 0.2f, 0.2f, 0.0f);
 
-const D3DXVECTOR3   POINT_POSITION(2.0f, 0.0f, -2.0f);
-const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.2f, 0.5f, 0.2f, 0.0f);
-const D3DXCOLOR     POINT_COLOR_SPECULAR(0.2f, 0.5f, 0.2f, 0.0f);
+const D3DXVECTOR3   POINT_POSITION(2.0f, 0.0f, -1.0f);
+const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.2f, 0.7f, 0.2f, 0.0f);
+const D3DXCOLOR     POINT_COLOR_SPECULAR(0.2f, 0.7f, 0.2f, 0.0f);
 const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
+
+const D3DXVECTOR3   SPOT_POSITION(-3.0f, 6.0f, 1.0f);
+const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/2.5)*cosf(D3DX_PI/4),
+                                -sinf(D3DX_PI/2.5)*sinf(D3DX_PI/4),
+                                -cosf(D3DX_PI/2.5));
+const D3DXCOLOR     SPOT_COLOR_DIFFUSE(0.0f, 0.0f, 1.0f, 0.0f);
+const D3DXCOLOR     SPOT_COLOR_SPECULAR(0.0f, 0.0f, 1.0f, 0.0f);
+const D3DXVECTOR3   SPOT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
+const D3DXVECTOR2   SPOT_RANGE_FACTOR(0.99f, 0.97f);
 
 
 const float MORPHING_SPEED = 0.0f;
@@ -98,13 +109,22 @@ enum {
 
     // light sources
     SCENE_COLOR_AMBIENT_REG = 64,
+
     DIRECTIONAL_VECTOR_REG = 65,
     DIRECTIONAL_COLOR_DIFFUSE_REG = 66,
     DIRECTIONAL_COLOR_SPECULAR_REG = 67,
+
     POINT_POSITION_REG = 68,
     POINT_COLOR_DIFFUSE_REG = 69,
     POINT_COLOR_SPECULAR_REG = 70,
-    POINT_ATTENUATION_FACTOR_REG = 71
+    POINT_ATTENUATION_FACTOR_REG = 71,
+
+    SPOT_POSITION_REG = 72,
+    SPOT_VECTOR_REG = 73,
+    SPOT_COLOR_DIFFUSE_REG = 74,
+    SPOT_COLOR_SPECULAR_REG = 75,
+    SPOT_ATTENUATION_FACTOR_REG = 76,
+    SPOT_RANGE_FACTOR_REG = 77,
 };
 
 unsigned WORLD_DIMENSION = 3;
@@ -126,9 +146,9 @@ struct Coord
 
 const Coord COORDS[] = {
     /* MIN */       /* MAX */       /* DELTA */     /* INITIAL */
-    { 3.0f,         20.0f,          0.25f,          10.0f     },     // RHO
-    { D3DX_PI/8,    D3DX_PI*7/8,    D3DX_PI/24,     D3DX_PI*11/24 }, // THETA
-    { -1e37f,       1e37f,          D3DX_PI/24,     0.0f      },     // PHI
+    { 3.0f,         20.0f,          0.25f,          7.0f      },     // RHO
+    { D3DX_PI/24,   D3DX_PI*23/24,  D3DX_PI/24,     D3DX_PI*11/24 }, // THETA
+    { -1e37f,       1e37f,          D3DX_PI/24,     -D3DX_PI*3/2 },     // PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      }      // PYRAMID PHI
 };
 
@@ -406,6 +426,13 @@ void SetLightsToShader(Device *device)
     OK( device->SetVertexShaderConstantF(POINT_COLOR_DIFFUSE_REG, POINT_COLOR_DIFFUSE, 1) );
     OK( device->SetVertexShaderConstantF(POINT_COLOR_SPECULAR_REG, POINT_COLOR_SPECULAR, 1) );
     OK( device->SetVertexShaderConstantF(POINT_ATTENUATION_FACTOR_REG, POINT_ATTENUATION_FACTOR, 1) );
+
+    OK( device->SetVertexShaderConstantF(SPOT_POSITION_REG, SPOT_POSITION, 1) );
+    OK( device->SetVertexShaderConstantF(SPOT_VECTOR_REG, SPOT_VECTOR, 1) );
+    OK( device->SetVertexShaderConstantF(SPOT_COLOR_DIFFUSE_REG, SPOT_COLOR_DIFFUSE, 1) );
+    OK( device->SetVertexShaderConstantF(SPOT_COLOR_SPECULAR_REG, SPOT_COLOR_SPECULAR, 1) );
+    OK( device->SetVertexShaderConstantF(SPOT_ATTENUATION_FACTOR_REG, SPOT_ATTENUATION_FACTOR, 1) );
+    OK( device->SetVertexShaderConstantF(SPOT_RANGE_FACTOR_REG, SPOT_RANGE_FACTOR, 1) );
 }
 
 void Render(Device *device,

@@ -28,9 +28,15 @@ vs_1_1
 ;   c68 : position (P)
 ;   c69 : diffuse color (Id)
 ;   c70 : specular color (Is)
-;   c71 : attenuation (a, b, c, 0)
+;   c71 : attenuation (a, b, c)
 ; 
 ; > SPOT
+;   c72 : position (P)
+;   c73 : vector (Vspot)
+;   c74 : diffuse color (Id)
+;   c75 : specular color (Is)
+;   c76 : attenuation (a, b, c)
+;   c77 : ranges (max, min)
 
 
 dcl_position v0             ; vertex
@@ -118,11 +124,10 @@ add     r10, r10, r6        ; ambient + directional
 ; recieves: r7 (eye - v), r8 (norm), r9 (vertex), r10 (color)
 ; returns: r10 (color)
 
-    sub     r5, c68, r9         ; r5 = L = PointSource - Vertex
+    sub     r5, c68, r9         ; r5 = L = LightSource - Vertex
     dp3     r0, r5, r5          ; normalizing...
     rsq     r0, r0              ; ...
     mul     r5, r5, r0          ; r5 = L/|L|
-    
 
     ; diffuse
         dp3     r1, r8, r5          ; r1 = (norm, L)
@@ -155,6 +160,63 @@ add     r10, r10, r6        ; ambient + directional
         rcp     r0, r0              ; r0 = 1 / (a + b*d + c*d^2)
                                     ; r0 = attenuation factor
     mul     r6, r6, r0          ; color /= (a + b*d + c*d^2)
+    
+add     r10, r10, r6        ; ambient + directional + point
+
+; _________________________________
+; CALCULATING SPOT COLOR
+; recieves: r7 (eye - v), r8 (norm), r9 (vertex), r10 (color)
+; returns: r10 (color)
+
+    sub     r5, c72, r9         ; r5 = L = LightSource - Vertex
+    dp3     r0, r5, r5          ; normalizing...
+    rsq     r0, r0              ; ...
+    mul     r5, r5, r0          ; r5 = L/|L|
+    
+    ; diffuse
+        dp3     r1, r8, r5          ; r1 = (norm, L)
+        sge     r3, r1, c0          ; r3 = r1 >= 0
+        mul     r1, r1, r3          ; now r1 >= 0
+        mul     r0, v2, c74         ; r0 = C * Id
+        mul     r6, r0, r1          ; r6 = C * Id * (norm, L)
+                                    ; r6 = diffuse
+
+    ; specular
+        dp3     r1, r8, r5          ; r1 = (norm, L)
+        mul     r1, r1, c2          ; r1 = 2*(norm, L)
+        mad     r1, r1, r8, -r5     ; r1 = 2*(norm, L)*norm - L
+        dp3     r1, r7, r1          ; r1 = ( eye-v, 2*(norm, L)*norm - L )
+
+        mov     r1.w, c32           ; powering and checking that it's > 0
+        lit     r1, r1              ; r1.z = r1^f
+
+        mul     r0, v2, c75         ; r0 = C * Is
+        mul     r2, r0, r1.z        ; r2 = C * Is * ( eye-v, 2*(norm, L)*norm - L )
+                                    ; r2 = specular
+
+    add     r6, r6, r2          ; color = diffuse + specular
+    
+    ; attenuation
+        dp3     r0, r5, r5          ; r0 = d^2
+        rsq     r1, r0              ; r1 = 1/d
+        dst     r0, r0, r1          ; r0 = ( 1, d, d^2, 1/d )
+        dp3     r0, r0, c76         ; r0 = a + b*d + c*d^2
+        rcp     r0, r0              ; r0 = 1 / (a + b*d + c*d^2)
+                                    ; r0 = attenuation factor
+    mul     r6, r6, r0          ; color /= (a + b*d + c*d^2)
+    
+    ; spotting
+        dp3     r0, r5, -c73        ; r0 = (Vspot, L)
+        ; we would calc this: (r0-min)/(max-min)
+        sub     r1, r0, c77.y       ; r1 = r0-min
+        mov     r2, c77.x           ; r2 = max
+        sub     r2, r2, c77.y       ; r2 = max-min
+        rcp     r2, r2              ; r2 = 1/(max-min)
+        mul     r0, r1, r2          ; (r0-min)/(max-min)
+        max     r0, r0, c0          ; => r0 >= 0
+        min     r0, r0, c1          ; => r0 <= 1
+        
+    mul     r6, r6, r0          ; color *= spotting_factor
     
 add     r10, r10, r6        ; ambient + directional + point
 
