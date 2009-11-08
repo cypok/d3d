@@ -57,7 +57,7 @@ const D3DXCOLOR     DIRECTIONAL_COLOR_AMBIENT = DIRECTIONAL_COLOR_DIFFUSE;
 const float         DIRECTIONAL_SPECULAR_DEGRADATION = 0.03f;
 
 
-const float MORPHING_SPEED = 5.0f;
+const float MORPHING_SPEED = 0.0f;
 const unsigned MORPHING_TIMER_SPEED = 25;
 const unsigned TESSELATE_LEVEL = 50;
 //const bool TESSELATE_RANDOM_COLORS = true;
@@ -311,7 +311,7 @@ void SetTimeToShader(Device *device, LONG time)
 {
     // time: 0..inf -> 0..1
     D3DXVECTOR4 v;
-    v.x = v.y = v.z = v.w = 1.0f;//(1.0f + sinf(D3DXToRadian( static_cast<float>(time*MORPHING_SPEED) )))/2;
+    v.x = v.y = v.z = v.w = (1.0f + sinf(D3DX_PI/2 + D3DXToRadian( static_cast<float>(time*MORPHING_SPEED) )))/2;
     OK( device->SetVertexShaderConstantF(TIME_REG, v, 1) );
     v.x = v.y = v.z = v.w = SPHERA_RADIUS;
     OK( device->SetVertexShaderConstantF(RADIUS_REG, v, 1) );
