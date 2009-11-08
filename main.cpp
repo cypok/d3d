@@ -152,7 +152,7 @@ const Coord COORDS[] = {
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      }      // PYRAMID PHI
 };
 
-const TCHAR SHADER_FILE[] = _T("shader.vsh");
+const TCHAR PYRAMID_SHADER_FILE[] = _T("pyramid.vsh");
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
