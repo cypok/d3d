@@ -432,7 +432,10 @@ void SetLightsToShader(Device *device)
     OK( device->SetVertexShaderConstantF(SPOT_COLOR_DIFFUSE_REG, SPOT_COLOR_DIFFUSE, 1) );
     OK( device->SetVertexShaderConstantF(SPOT_COLOR_SPECULAR_REG, SPOT_COLOR_SPECULAR, 1) );
     OK( device->SetVertexShaderConstantF(SPOT_ATTENUATION_FACTOR_REG, SPOT_ATTENUATION_FACTOR, 1) );
-    OK( device->SetVertexShaderConstantF(SPOT_RANGE_FACTOR_REG, SPOT_RANGE_FACTOR, 1) );
+    v.x = 1/(SPOT_RANGE_FACTOR.x-SPOT_RANGE_FACTOR.y);
+    v.y = SPOT_RANGE_FACTOR.y*v.x;
+    v.z = v.w = 0;
+    OK( device->SetVertexShaderConstantF(SPOT_RANGE_FACTOR_REG, v, 1) );
 }
 
 void Render(Device *device,

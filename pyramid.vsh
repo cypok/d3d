@@ -36,7 +36,7 @@ vs_1_1
 ;   c74 : diffuse color (Id)
 ;   c75 : specular color (Is)
 ;   c76 : attenuation (a, b, c)
-;   c77 : ranges (max, min)
+;   c77 : ranges ( 1/(max-min) and min/(max-min) )
 
 
 dcl_position v0             ; vertex
@@ -201,16 +201,11 @@ add     r10, r10, r6        ; ambient + directional + point
                                     ; r0 = attenuation factor
     mul     r6, r6, r0          ; color /= (a + b*d + c*d^2)
     
-    ; spotting
-        dp3     r0, r5, -c73        ; r0 = (Vspot, L)
-        ; we would calc this: (r0-min)/(max-min)
-        sub     r1, r0, c77.y       ; r1 = r0-min
-        mov     r2, c77.x           ; r2 = max
-        sub     r2, r2, c77.y       ; r2 = max-min
-        rcp     r2, r2              ; r2 = 1/(max-min)
-        mul     r0, r1, r2          ; (r0-min)/(max-min)
-        max     r0, r0, c0          ; => r0 >= 0
-        min     r0, r0, c1          ; => r0 <= 1
+    ; spotting: we would calc this: (r0-min)/(max-min)
+        dp3     r1, r5, -c73          ; r1 = (Vspot, L)
+        mad     r0, r1, c77.x, -c77.y ; r0 = r1/(max-min) - min/(max-min)
+        max     r0, r0, c0            ; => r0 >= 0
+        min     r0, r0, c1            ; => r0 <= 1
         
     mul     r6, r6, r0          ; color *= spotting_factor
     
