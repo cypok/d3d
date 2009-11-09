@@ -46,7 +46,6 @@ dcl_color v2                ; color
 ; some useful stuff
 def c0, 0, 0, 0, 0
 def c1, 1, 1, 1, 1
-def c2, 2, 2, 2, 2
 
 ; _________________________________
 ; CALCULATING POSITION
@@ -98,15 +97,14 @@ m4x4    oPos, r9, c4
 
     ; diffuse
         dp3     r1, r8, -c65        ; r1 = (norm, L)
-        sge     r3, r1, c0          ; r3 = r1 >= 0
-        mul     r1, r1, r3          ; now r1 >= 0
+        max     r1, r1, c0          ; now r1 >= 0
         mul     r0, v2, c66         ; r0 = C * Id
         mul     r6, r0, r1          ; r6 = C * Id * (norm, L)
                                     ; r6 = diffuse
 
     ; specular
         dp3     r1, r8, -c65        ; r1 = (norm, L)
-        mul     r1, r1, c2          ; r1 = 2*(norm, L)
+        add     r1, r1, r1          ; r1 = 2*(norm, L)
         mad     r1, r1, r8, c65     ; r1 = 2*(norm, L)*norm - L
         dp3     r1, r7, r1          ; r1 = ( eye-v, 2*(norm, L)*norm - L )
 
@@ -131,15 +129,14 @@ add     r10, r10, r6        ; ambient + directional
 
     ; diffuse
         dp3     r1, r8, r5          ; r1 = (norm, L)
-        sge     r3, r1, c0          ; r3 = r1 >= 0
-        mul     r1, r1, r3          ; now r1 >= 0
+        max     r1, r1, c0          ; now r1 >= 0
         mul     r0, v2, c69         ; r0 = C * Id
         mul     r6, r0, r1          ; r6 = C * Id * (norm, L)
                                     ; r6 = diffuse
 
     ; specular
         dp3     r1, r8, r5          ; r1 = (norm, L)
-        mul     r1, r1, c2          ; r1 = 2*(norm, L)
+        add     r1, r1, r1          ; r1 = 2*(norm, L)
         mad     r1, r1, r8, -r5     ; r1 = 2*(norm, L)*norm - L
         dp3     r1, r7, r1          ; r1 = ( eye-v, 2*(norm, L)*norm - L )
 
@@ -175,15 +172,14 @@ add     r10, r10, r6        ; ambient + directional + point
     
     ; diffuse
         dp3     r1, r8, r5          ; r1 = (norm, L)
-        sge     r3, r1, c0          ; r3 = r1 >= 0
-        mul     r1, r1, r3          ; now r1 >= 0
+        max     r1, r1, c0          ; now r1 >= 0
         mul     r0, v2, c74         ; r0 = C * Id
         mul     r6, r0, r1          ; r6 = C * Id * (norm, L)
                                     ; r6 = diffuse
 
     ; specular
         dp3     r1, r8, r5          ; r1 = (norm, L)
-        mul     r1, r1, c2          ; r1 = 2*(norm, L)
+        add     r1, r1, r1          ; r1 = 2*(norm, L)
         mad     r1, r1, r8, -r5     ; r1 = 2*(norm, L)*norm - L
         dp3     r1, r7, r1          ; r1 = ( eye-v, 2*(norm, L)*norm - L )
 

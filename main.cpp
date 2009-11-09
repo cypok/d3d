@@ -334,7 +334,7 @@ void InitVDeclAndShader(Device *device, IDirect3DVertexDeclaration9 **vertex_dec
     OK( device->CreateVertexDeclaration(VERTEX_ELEMENT, vertex_declaration) );
 
     ID3DXBuffer *code = NULL;
-    OK( D3DXAssembleShaderFromFile(SHADER_FILE, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
+    OK( D3DXAssembleShaderFromFile(PYRAMID_SHADER_FILE, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
     OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), vertex_shader) );
 
     ReleaseInterface(code);
