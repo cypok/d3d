@@ -58,15 +58,15 @@ const D3DXVECTOR3   DIRECTIONAL_VECTOR( sinf(D3DX_PI/6)*cosf(D3DX_PI/4),
 const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(0.7f, 0.2f, 0.2f, 0.0f);
 const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.7f, 0.2f, 0.2f, 0.0f);
 
-const D3DXVECTOR3   POINT_POSITION(2.0f, 0.0f, -1.0f);
+const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, -1.0f);
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.2f, 0.7f, 0.2f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.2f, 0.7f, 0.2f, 0.0f);
 const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
 
-const D3DXVECTOR3   SPOT_POSITION(-3.0f, 6.0f, 1.0f);
-const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/2.5)*cosf(D3DX_PI/4),
-                                -sinf(D3DX_PI/2.5)*sinf(D3DX_PI/4),
-                                -cosf(D3DX_PI/2.5));
+const D3DXVECTOR3   SPOT_POSITION(-3.0f, 3.0f, 1.0f);
+const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/2.8)*cosf(D3DX_PI/4),
+                                -sinf(D3DX_PI/2.8)*sinf(D3DX_PI/4),
+                                -cosf(D3DX_PI/2.8));
 const D3DXCOLOR     SPOT_COLOR_DIFFUSE(0.0f, 0.0f, 1.0f, 0.0f);
 const D3DXCOLOR     SPOT_COLOR_SPECULAR(0.0f, 0.0f, 1.0f, 0.0f);
 const D3DXVECTOR3   SPOT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
@@ -74,7 +74,7 @@ const D3DXVECTOR2   SPOT_RANGE_FACTOR(0.99f, 0.97f);
 
 
 const float MORPHING_SPEED = 0.0f;
-const unsigned MORPHING_TIMER_SPEED = 25;
+const unsigned MORPHING_TIMER_SPEED = 10;
 const unsigned TESSELATE_LEVEL = 50;
 const unsigned PYRAMID_VERTICES_COUNT = 4 * (TESSELATE_LEVEL + 1) * (TESSELATE_LEVEL + 2); // it's math
 const unsigned PYRAMID_INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL; // it's too
@@ -82,7 +82,7 @@ const unsigned PYRAMID_INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL
 const DWORD PYRAMID_COLOR = WHITE; // set it to 0 to get eight-colored pyramid
 const float SPECULAR_DEGRADATION = 0.1f;
 
-const D3DXVECTOR3 PYRAMID_POSITION(0.0f, 3.0f, 0.0f);
+const D3DXVECTOR3 PYRAMID_POSITION(1.0f, 1.5f, 0.0f);
 
 const D3DXVECTOR3 INITIAL_PYRAMID[] = {
     D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ),
@@ -292,9 +292,9 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, Device **device)
     params.AutoDepthStencilFormat = D3DFMT_D16;
 
     OK( (*d3d)->CreateDevice(D3DADAPTER_DEFAULT,
-                                    D3DDEVTYPE_REF,
+                                    D3DDEVTYPE_HAL,
                                     hWnd,
-                                    D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+                                    D3DCREATE_HARDWARE_VERTEXPROCESSING,
                                     &params,
                                     device) );
 
@@ -391,15 +391,15 @@ void CalcMatrix(Device *device, float rho, float tetha, float phi, float pyramid
 
     // Pyramid rotation
     D3DXMATRIX pyramid_rotation(
-        cosf(pyramid_phi),  sinf(pyramid_phi), 0, 0,
-        -sinf(pyramid_phi), cosf(pyramid_phi), 0, 0,
-        0,                  0,                 1, 0,
-        0,                  0,                 0, 1
+        cosf(pyramid_phi),  -sinf(pyramid_phi), 0, 0,
+        sinf(pyramid_phi),  cosf(pyramid_phi),  0, 0,
+        0,                  0,                  1, 0,
+        0,                  0,                  0, 1
     );
     // Pyramid position
     D3DXMATRIX pyramid_position(
-        1.0f, 0.0f, 0.0f, PYRAMID_POSITION.x,
-        0.0f, 1.0f, 0.0f, PYRAMID_POSITION.y,
+        1.0f, 0.0f, 0.0f, PYRAMID_POSITION.x*cosf(pyramid_phi),
+        0.0f, 1.0f, 0.0f, PYRAMID_POSITION.y*sinf(pyramid_phi),
         0.0f, 0.0f, 1.0f, PYRAMID_POSITION.z,
         0.0f, 0.0f, 0.0f, 1.0f
     );
