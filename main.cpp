@@ -55,27 +55,27 @@ const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 const D3DXVECTOR3   DIRECTIONAL_VECTOR( sinf(D3DX_PI/6)*cosf(D3DX_PI/4),
                                         sinf(D3DX_PI/6)*sinf(D3DX_PI/4),
                                        -cosf(D3DX_PI/6));
-const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(0.7f, 0.2f, 0.2f, 0.0f);
-const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.7f, 0.2f, 0.2f, 0.0f);
+const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(0.7f, 0.0f, 0.0f, 0.0f);
+const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.3f, 0.0f, 0.0f, 0.0f);
 
-const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, -1.0f);
-const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.2f, 0.7f, 0.2f, 0.0f);
-const D3DXCOLOR     POINT_COLOR_SPECULAR(0.2f, 0.7f, 0.2f, 0.0f);
+const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, -1.5f);
+const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
+const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
 const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
 
 const D3DXVECTOR3   SPOT_POSITION(-3.0f, 3.0f, 1.0f);
 const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/2.8)*cosf(D3DX_PI/4),
                                 -sinf(D3DX_PI/2.8)*sinf(D3DX_PI/4),
                                 -cosf(D3DX_PI/2.8));
-const D3DXCOLOR     SPOT_COLOR_DIFFUSE(0.0f, 0.0f, 1.0f, 0.0f);
-const D3DXCOLOR     SPOT_COLOR_SPECULAR(0.0f, 0.0f, 1.0f, 0.0f);
+const D3DXCOLOR     SPOT_COLOR_DIFFUSE(0.0f, 0.0f, 0.7f, 0.0f);
+const D3DXCOLOR     SPOT_COLOR_SPECULAR(0.0f, 0.0f, 0.5f, 0.0f);
 const D3DXVECTOR3   SPOT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
 const D3DXVECTOR2   SPOT_RANGE_FACTOR(0.99f, 0.97f);
 
 
 const float MORPHING_SPEED = 0.0f;
 const unsigned MORPHING_TIMER_SPEED = 10;
-const unsigned TESSELATE_LEVEL = 50;
+const unsigned TESSELATE_LEVEL = 500;
 const unsigned PYRAMID_VERTICES_COUNT = 4 * (TESSELATE_LEVEL + 1) * (TESSELATE_LEVEL + 2); // it's math
 const unsigned PYRAMID_INDICES_COUNT = 8 * 3 * TESSELATE_LEVEL * TESSELATE_LEVEL; // it's too
 
@@ -94,6 +94,43 @@ const D3DXVECTOR3 INITIAL_PYRAMID[] = {
 };
 const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
 const float SPHERA_RADIUS = sqrtf(2.0);
+
+const D3DXCOLOR ANISOTROPIC_COLORS[] = {
+    D3DXCOLOR( 0.00f, 0.00f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.10f, 0.00f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.20f, 0.00f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.30f, 0.00f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.40f, 0.00f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.50f, 0.00f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.60f, 0.00f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.50f, 0.10f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.40f, 0.20f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.30f, 0.30f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.20f, 0.40f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.10f, 0.50f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.60f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.50f, 0.10f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.40f, 0.20f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.30f, 0.30f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.20f, 0.40f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.10f, 0.50f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.00f, 0.60f,   0.00f),
+    D3DXCOLOR( 0.10f, 0.00f, 0.50f,   0.00f),
+    D3DXCOLOR( 0.20f, 0.00f, 0.40f,   0.00f),
+    D3DXCOLOR( 0.30f, 0.00f, 0.30f,   0.00f),
+    D3DXCOLOR( 0.40f, 0.00f, 0.20f,   0.00f),
+    D3DXCOLOR( 0.50f, 0.00f, 0.10f,   0.00f),
+    D3DXCOLOR( 0.60f, 0.00f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.50f, 0.10f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.40f, 0.20f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.30f, 0.30f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.20f, 0.40f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.10f, 0.50f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.60f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.70f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.80f, 0.00f,   0.00f),
+};
+const unsigned ANISOTROPIC_COLORS_COUNT = sizeof(ANISOTROPIC_COLORS)/sizeof(ANISOTROPIC_COLORS[0]);
 
 enum {
     // matrices
@@ -125,6 +162,8 @@ enum {
     SPOT_COLOR_SPECULAR_REG = 75,
     SPOT_ATTENUATION_FACTOR_REG = 76,
     SPOT_RANGE_FACTOR_REG = 77,
+
+    ANISOTROPIC_COLORS_REG = 96
 };
 
 unsigned WORLD_DIMENSION = 3;
@@ -436,6 +475,13 @@ void SetLightsToShader(Device *device)
     v.y = SPOT_RANGE_FACTOR.y*v.x;
     v.z = v.w = 0;
     OK( device->SetVertexShaderConstantF(SPOT_RANGE_FACTOR_REG, v, 1) );
+
+
+    v.x = v.y = v.z = v.w = static_cast<float>(ANISOTROPIC_COLORS_COUNT);
+    OK( device->SetVertexShaderConstantF(ANISOTROPIC_COLORS_REG, v, 1) );
+    OK( device->SetVertexShaderConstantF(   ANISOTROPIC_COLORS_REG+1,
+                                            (float *)(ANISOTROPIC_COLORS),
+                                            ANISOTROPIC_COLORS_COUNT) );
 }
 
 void Render(Device *device,
