@@ -39,8 +39,10 @@ vs_1_1
 ;   c77 : ranges ( 1/(max-min) and min/(max-min) )
 ; _________________________________
 ; ANISOTROPIC COLORS
-;   c96 : colors count
-;   c97... : CC colors
+;   c96 : diffuse colors count
+;   c97...c111 : diffuse colors
+;   c112 : spucular colors count
+;   c113...c127 : specular colors
 
 dcl_position v0             ; vertex
 dcl_normal v1               ; normal
@@ -99,7 +101,7 @@ m4x4    oPos, r9, c4
 ; returns: r10 (color)
 
     ; diffuse
-        dp3     r1, r8, -c65        ; r1 = (norm, L)
+        dp3     r1, r8, -c65        ; r1 = (norm, L) << DON'T EDIT R1
         max     r2, r1, c0          ; r2 = max(r1, 0)
         mul     r0, v2, c66         ; r0 = C * Id
         mul     r6, r0, r2          ; r6 = C * Id * (norm, L)
@@ -130,12 +132,18 @@ add     r10, r10, r6        ; ambient + directional
     mul     r5, r5, r0          ; r5 = L/|L|
 
     ; diffuse
-        dp3     r1, r8, r5          ; r1 = (norm, L)
+        dp3     r1, r8, r5          ; r1 = (norm, L) << DON'T EDIT R1
         max     r2, r1, c0          ; r2 = max(r1, 0)
-        mul     r0, r2, c96         ; r0 = index of anisotropic color
+        
+        mul     r0, r2, c96         ; r0 = float index of anisotropic color
         mov     a0.x, r0.x          ; a0 = index of anisotropic color
+        frc     r2.y, r0            ; r2 = r0 - [r0] = Weight
+        mul     r3, c[a0.x+98], r2.y; r3 = NextColor * w
+        sub     r2.y, c1, r2.y      ; r2 = 1 - w
+        mad     r3, c[a0.x+97], r2.y, r3 ; r3 = NextColor * w + PrevColor * (1-w)
+        
         mul     r0, v2, c69         ; r0 = C * Id
-        mul     r6, r0, c[a0.x+97]  ; r6 = C * Id * Anisotropic( (norm, L) )
+        mul     r6, r0, r3          ; r6 = C * Id * Anisotropic( (norm, L) )
                                     ; r6 = diffuse
 
     ; specular
@@ -146,11 +154,15 @@ add     r10, r10, r6        ; ambient + directional
         mov     r1.w, c32           ; powering and checking that it's > 0
         lit     r1, r1              ; r1.z = r1^f
         
-        mul     r0, r1.z, c96       ; r0 = index of anisotropic color
+        mul     r0, r1.z, c112      ; r0 = index of anisotropic color
         mov     a0.x, r0            ; a0 = index of anisotropic color
+        frc     r2.y, r0            ; r2 = r0 - [r0] = Weight
+        mul     r3, c[a0.x+114], r2.y; r3 = NextColor * w
+        sub     r2.y, c1, r2.y      ; r2 = 1 - w
+        mad     r3, c[a0.x+113], r2.y, r3 ; r3 = NextColor * w + PrevColor * (1-w)
 
         mul     r0, v2, c70         ; r0 = C * Is
-        mul     r2, r0, c[a0.x+97]  ; r2 = C * Is * Anisotropic( eye-v, 2*(norm, L)*norm - L )
+        mul     r2, r0, r3          ; r2 = C * Is * Anisotropic( eye-v, 2*(norm, L)*norm - L )
                                     ; r2 = specular
 
     add     r6, r6, r2          ; color = diffuse + specular
@@ -177,7 +189,7 @@ add     r10, r10, r6        ; ambient + directional + point
     mul     r5, r5, r0          ; r5 = L/|L|
     
     ; diffuse
-        dp3     r1, r8, r5          ; r1 = (norm, L)
+        dp3     r1, r8, r5          ; r1 = (norm, L) << DON'T EDIT R1
         max     r2, r1, c0          ; r2 = max(r1, 0)
         mul     r0, v2, c74         ; r0 = C * Id
         mul     r6, r0, r2          ; r6 = C * Id * (norm, L)

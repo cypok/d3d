@@ -95,42 +95,45 @@ const D3DXVECTOR3 INITIAL_PYRAMID[] = {
 const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
 const float SPHERA_RADIUS = sqrtf(2.0);
 
-const D3DXCOLOR ANISOTROPIC_COLORS[] = {
+// COLORS COUNT SHOULD BE < 16
+const D3DXCOLOR ANISOTROPIC_DIFFUSE_COLORS[] = {
     D3DXCOLOR( 0.00f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.10f, 0.00f, 0.00f,   0.00f),
     D3DXCOLOR( 0.20f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.30f, 0.00f, 0.00f,   0.00f),
     D3DXCOLOR( 0.40f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.50f, 0.00f, 0.00f,   0.00f),
     D3DXCOLOR( 0.60f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.50f, 0.10f, 0.00f,   0.00f),
     D3DXCOLOR( 0.40f, 0.20f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.30f, 0.30f, 0.00f,   0.00f),
     D3DXCOLOR( 0.20f, 0.40f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.10f, 0.50f, 0.00f,   0.00f),
     D3DXCOLOR( 0.00f, 0.60f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.50f, 0.10f,   0.00f),
     D3DXCOLOR( 0.00f, 0.40f, 0.20f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.30f, 0.30f,   0.00f),
     D3DXCOLOR( 0.00f, 0.20f, 0.40f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.10f, 0.50f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.00f, 0.60f,   0.00f),
-    D3DXCOLOR( 0.10f, 0.00f, 0.50f,   0.00f),
     D3DXCOLOR( 0.20f, 0.00f, 0.40f,   0.00f),
-    D3DXCOLOR( 0.30f, 0.00f, 0.30f,   0.00f),
     D3DXCOLOR( 0.40f, 0.00f, 0.20f,   0.00f),
-    D3DXCOLOR( 0.50f, 0.00f, 0.10f,   0.00f),
     D3DXCOLOR( 0.60f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.50f, 0.10f, 0.00f,   0.00f),
     D3DXCOLOR( 0.40f, 0.20f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.30f, 0.30f, 0.00f,   0.00f),
     D3DXCOLOR( 0.20f, 0.40f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.10f, 0.50f, 0.00f,   0.00f),
     D3DXCOLOR( 0.00f, 0.60f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.70f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.80f, 0.00f,   0.00f),
 };
-const unsigned ANISOTROPIC_COLORS_COUNT = sizeof(ANISOTROPIC_COLORS)/sizeof(ANISOTROPIC_COLORS[0]);
+const unsigned ANISOTROPIC_DIFFUSE_COLORS_COUNT = sizeof(ANISOTROPIC_DIFFUSE_COLORS)/sizeof(ANISOTROPIC_DIFFUSE_COLORS[0]);
+
+// COLORS COUNT SHOULD BE < 16
+const D3DXCOLOR ANISOTROPIC_SPECULAR_COLORS[] = {
+    D3DXCOLOR( 0.00f, 0.00f, 0.00f,   0.00f),
+    D3DXCOLOR( 0.20f, 0.20f, 0.20f,   0.00f),
+    D3DXCOLOR( 0.40f, 0.40f, 0.40f,   0.00f),
+    D3DXCOLOR( 0.60f, 0.60f, 0.60f,   0.00f),
+    D3DXCOLOR( 0.70f, 0.70f, 0.70f,   0.00f),
+    D3DXCOLOR( 0.80f, 0.80f, 0.80f,   0.00f),
+    D3DXCOLOR( 0.90f, 0.90f, 0.90f,   0.00f),
+    D3DXCOLOR( 1.00f, 1.00f, 1.00f,   0.00f),
+    D3DXCOLOR( 0.90f, 0.90f, 0.90f,   0.00f),
+    D3DXCOLOR( 0.80f, 0.80f, 0.80f,   0.00f),
+    D3DXCOLOR( 0.70f, 0.70f, 0.70f,   0.00f),
+    D3DXCOLOR( 0.60f, 0.60f, 0.60f,   0.00f),
+    D3DXCOLOR( 0.40f, 0.40f, 0.40f,   0.00f),
+    D3DXCOLOR( 0.20f, 0.20f, 0.20f,   0.00f),
+    D3DXCOLOR( 0.00f, 0.00f, 0.00f,   0.00f),
+};
+const unsigned ANISOTROPIC_SPECULAR_COLORS_COUNT = sizeof(ANISOTROPIC_SPECULAR_COLORS)/sizeof(ANISOTROPIC_SPECULAR_COLORS[0]);
 
 enum {
     // matrices
@@ -163,7 +166,8 @@ enum {
     SPOT_ATTENUATION_FACTOR_REG = 76,
     SPOT_RANGE_FACTOR_REG = 77,
 
-    ANISOTROPIC_COLORS_REG = 96
+    ANISOTROPIC_DIFFUSE_COLORS_REG = 96,
+    ANISOTROPIC_SPECULAR_COLORS_REG = 112,
 };
 
 unsigned WORLD_DIMENSION = 3;
@@ -477,11 +481,17 @@ void SetLightsToShader(Device *device)
     OK( device->SetVertexShaderConstantF(SPOT_RANGE_FACTOR_REG, v, 1) );
 
 
-    v.x = v.y = v.z = v.w = static_cast<float>(ANISOTROPIC_COLORS_COUNT);
-    OK( device->SetVertexShaderConstantF(ANISOTROPIC_COLORS_REG, v, 1) );
-    OK( device->SetVertexShaderConstantF(   ANISOTROPIC_COLORS_REG+1,
-                                            (float *)(ANISOTROPIC_COLORS),
-                                            ANISOTROPIC_COLORS_COUNT) );
+    v.x = v.y = v.z = v.w = -1 + static_cast<float>(ANISOTROPIC_DIFFUSE_COLORS_COUNT);
+    OK( device->SetVertexShaderConstantF(ANISOTROPIC_DIFFUSE_COLORS_REG, v, 1) );
+    OK( device->SetVertexShaderConstantF(   ANISOTROPIC_DIFFUSE_COLORS_REG+1,
+                                            (float *)(ANISOTROPIC_DIFFUSE_COLORS),
+                                            ANISOTROPIC_DIFFUSE_COLORS_COUNT) );
+
+    v.x = v.y = v.z = v.w = -1 + static_cast<float>(ANISOTROPIC_SPECULAR_COLORS_COUNT);
+    OK( device->SetVertexShaderConstantF(ANISOTROPIC_SPECULAR_COLORS_REG, v, 1) );
+    OK( device->SetVertexShaderConstantF(   ANISOTROPIC_SPECULAR_COLORS_REG+1,
+                                            (float *)(ANISOTROPIC_SPECULAR_COLORS),
+                                            ANISOTROPIC_SPECULAR_COLORS_COUNT) );
 }
 
 void Render(Device *device,
