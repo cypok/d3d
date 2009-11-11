@@ -60,7 +60,7 @@ Model::~Model()
 void Model::Render(IDirect3DDevice9 *device)
 {
     SetShaderConstants(device);
-    OK( device->SetStreamSource(0, vertex_buffer, 0, Vertex::size()) );
+    OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof_vertex) );
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
@@ -159,7 +159,7 @@ void Pyramid::Tesselate(unsigned tesselation_level, DWORD color)
 {
     unsigned ci = 0; // current index
 
-    memset(vb, 0, vcount * Vertex::size());
+    memset(vb, 0, vcount * sizeof_vertex);
 
     const unsigned sides[][3] = {
         {4, 0, 1},

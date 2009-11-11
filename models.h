@@ -21,10 +21,6 @@ struct Vertex
     Vertex( D3DXVECTOR3 v = D3DXVECTOR3(),
             D3DXVECTOR3 norm = D3DXVECTOR3(1, 0, 0),
             DWORD color = BLACK              ) : v(v), norm(norm), color(color) {}
-    static inline unsigned size()
-    {
-        return sizeof( Vertex );
-    }
 };
 
 class Model
