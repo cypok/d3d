@@ -11,8 +11,8 @@ vs_1_1
 ; c12-c15 : pyramid position matrix
 ; _________________________________
 ; OBJECT PROPERTIES
-; c32 : 1 / specular degradation (f)
-; c33 : 0 <= time <= 1 (t)
+; c32 : 0 <= time <= 1 (t)
+; c33 : 1 / specular degradation (f)
 ; c34 : sphere radius (R)
 ; _________________________________
 ; LIGHT SOURCES
@@ -70,9 +70,9 @@ sge     r2, r0, r0          ; r2 = 1
 rsq     r0, r0              ; r0.x = 1/|v0|
  mul    r3, r1, r0          ; r3 = v0/|v0| = fnorm
 mad     r0, r0, c34, -r2    ; r0.x = R/|v0| - 1
-mad     r0, r0, c33, r2     ; r0.x = 1 + t*(R/|v0| - 1)
+mad     r0, r0, c32, r2     ; r0.x = 1 + t*(R/|v0| - 1)
  sub    r2, r3, r8          ; r2 = fnorm - inorm
- mad    r8, r2, c33, r8     ; r8 = (norm) = inorm + t*(fnorm - inorm)
+ mad    r8, r2, c32, r8     ; r8 = (norm) = inorm + t*(fnorm - inorm)
  dp3    r2, r8, r8          ; r2 = |norm|^2
  rsq    r2, r2              ; r2 = 1/|norm|
  mul    r8, r8, r2          ; norm = norm/|norm|
@@ -112,7 +112,7 @@ m4x4    oPos, r9, c4
         mad     r1, r1, r8, c65     ; r1 = 2*(norm, L)*norm - L
         dp3     r1, r7, r1          ; r1 = ( eye-v, 2*(norm, L)*norm - L )
 
-        mov     r1.w, c32           ; powering and checking that it's > 0
+        mov     r1.w, c33           ; powering and checking that it's > 0
         lit     r1, r1              ; r1.z = r1^f
 
         mul     r0, v2, c67         ; r0 = C * Is
@@ -151,7 +151,7 @@ add     r10, r10, r6        ; ambient + directional
         mad     r1, r1, r8, -r5     ; r1 = 2*(norm, L)*norm - L
         dp3     r1, r7, r1          ; r1 = ( eye-v, 2*(norm, L)*norm - L )
 
-        mov     r1.w, c32           ; powering and checking that it's > 0
+        mov     r1.w, c33           ; powering and checking that it's > 0
         lit     r1, r1              ; r1.z = r1^f
         
         mul     r0, r1.z, c112      ; r0 = index of anisotropic color
@@ -200,7 +200,7 @@ add     r10, r10, r6        ; ambient + directional + point
         mad     r1, r1, r8, -r5     ; r1 = 2*(norm, L)*norm - L
         dp3     r1, r7, r1          ; r1 = ( eye-v, 2*(norm, L)*norm - L )
 
-        mov     r1.w, c32           ; powering and checking that it's > 0
+        mov     r1.w, c33           ; powering and checking that it's > 0
         lit     r1, r1              ; r1.z = r1^f
 
         mul     r0, v2, c75         ; r0 = C * Is
