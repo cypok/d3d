@@ -55,7 +55,9 @@ def c1, 1, 1, 1, 1
 ; returns: r8 (norm), r9 (vertex)
 
 ; we need to do this:
-; oPos = v0 * (1 + t*(R/|v0| - 1))
+; 1. rotate
+; 2. v0 * (1 + t*(R/|v0| - 1))
+; 3. move
 
 ; v1 - initial normal (inorm)
 ; v0/|v0| - final normal (fnorm)
@@ -80,14 +82,14 @@ m4x4    oPos, r9, c4
 
 ; _________________________________
 ; C O L O R   C O L O R   C O L O R
-; recieves: r7 (eye - v), r8 (norm), r9 (vertex)
+; recieves: r8 (norm), r9 (vertex)
 ; returns: r10 (color)
 
 ; calculating (eye - v)/|eye-v|
-    sub     r7, c3, r9          ; r2 = eye - v
+    sub     r7, c3, r9          ; r7 = eye - v
     dp3     r0, r7, r7          ; normalizing...
     rsq     r0, r0              ; ...
-    mul     r7, r7, r0          ; r2 = (eye - v)/|eye-v|
+    mul     r7, r7, r0          ; r7 = (eye - v)/|eye-v|
 
 ; ambient
     mul     r10, v2, c64        ; r10 = C * Ia

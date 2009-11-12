@@ -18,9 +18,10 @@ const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");
 const unsigned      PYRAMID_GRANULARITY     = 100;
 const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 const float         PYRAMID_RADIUS_1        = sqrtf(2.0f);
-const float         PYRAMID_RADIUS_2        = 1.0f;
+const float         PYRAMID_RADIUS_2        = sqrtf(2.0f);
 const float         PYRAMID_ORBIT           = 2.0f;
-const float         PYRAMID_MORPHING_SPEED  = 0.02f;
+const float         PYRAMID_MORPHING_SPEED  = 0.01f;
+const DWORD         PYRAMID_COLOR           = WHITE;
 
 const TCHAR         CYLINDER_SHADER[]               = _T("cylinder.vsh");
 const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
@@ -29,7 +30,8 @@ const unsigned      CYLINDER_HORIZONTAL_GRANULARIRY = 100;
 const float         CYLINDER_HEIGHT                 = 3.0f;
 const float         CYLINDER_RADIUS                 = 0.5f;
 const float         CYLINDER_OSCILLATION_SPEED      = 0.015f;
-const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/8;
+const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/3;
+const DWORD         CYLINDER_COLOR                  = WHITE;
 
 const unsigned TIMER_FREQ = 10;
 
@@ -43,17 +45,17 @@ const D3DXVECTOR3   DIRECTIONAL_VECTOR( sinf(D3DX_PI/6)*cosf(D3DX_PI/4),
                                         sinf(D3DX_PI/6)*sinf(D3DX_PI/4),
                                        -cosf(D3DX_PI/6));
 const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(0.7f, 0.0f, 0.0f, 0.0f);
-const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.9f, 0.9f, 0.9f, 0.0f);
+const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.8f, 0.8f, 0.8f, 0.0f);
 
 const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, -1.5f);
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
 const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
 
-const D3DXVECTOR3   SPOT_POSITION(-3.0f, 3.0f, 1.0f);
-const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/2.8f)*cosf(D3DX_PI/4),
-                                -sinf(D3DX_PI/2.8f)*sinf(D3DX_PI/4),
-                                -cosf(D3DX_PI/2.8f));
+const D3DXVECTOR3   SPOT_POSITION(-4.0f, 4.0f, -1.0f);
+const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/3.0f)*cosf(D3DX_PI/4),
+                                -sinf(D3DX_PI/3.0f)*sinf(D3DX_PI/4),
+                                 cosf(D3DX_PI/3.0f));
 const D3DXCOLOR     SPOT_COLOR_DIFFUSE(0.0f, 0.0f, 0.7f, 0.0f);
 const D3DXCOLOR     SPOT_COLOR_SPECULAR(0.0f, 0.0f, 0.5f, 0.0f);
 const D3DXVECTOR3   SPOT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
@@ -106,8 +108,9 @@ const unsigned THETA = 1;
 const unsigned PHI = 2;
 const unsigned PYRAMID_PHI = 3;
 const unsigned PYRAMID_ORBIT_PHI = 4;
+const unsigned CYLINDER_PHI = 5;
 
-const unsigned TIME_VALUE_INDEX = 20; // in window class memory
+const unsigned TIME_VALUE_INDEX = 24; // in window class memory
 
 struct Coord
 {
@@ -121,9 +124,10 @@ const Coord COORDS[] = {
     /* MIN */       /* MAX */       /* DELTA */     /* INITIAL */
     { 3.0f,         20.0f,          0.25f,          7.0f      },     // RHO
     { D3DX_PI/24,   D3DX_PI*23/24,  D3DX_PI/24,     D3DX_PI*11/24 }, // THETA
-    { -1e37f,       1e37f,          D3DX_PI/24,     -D3DX_PI*3/2 },     // PHI
+    { -1e37f,       1e37f,          D3DX_PI/24,     D3DX_PI*3/2 },     // PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID ORBIT PHI
+    { -1e37f,       1e37f,          D3DX_PI/36,     D3DX_PI/4 },      // CYLINDER PHI
 };
 
 
@@ -292,7 +296,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         wcex.cbSize         = sizeof(WNDCLASSEX);
         wcex.style          = CS_HREDRAW | CS_VREDRAW;
         wcex.lpfnWndProc    = WndProc;
-        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG)+sizeof(float)*2; // here would be stored view coordinates
+        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG)+sizeof(float)*3; // here would be stored view coordinates
         wcex.cbWndExtra     = 0;
         wcex.hInstance      = hInstance;
         wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
@@ -317,11 +321,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        pyramid1 = new Pyramid(device, WHITE, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
+        pyramid1 = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
             PYRAMID_GRANULARITY, PYRAMID_RADIUS_1);
-        pyramid2 = new Pyramid(device, WHITE, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
+        pyramid2 = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
             PYRAMID_GRANULARITY, PYRAMID_RADIUS_2);
-        cylinder = new Cylinder(device, YELLOW, CYLINDER_SHADER, CYLINDER_POSITION, CYLINDER_OSCILLATION_SPEED,
+        cylinder = new Cylinder(device, CYLINDER_COLOR, CYLINDER_SHADER, CYLINDER_POSITION, CYLINDER_OSCILLATION_SPEED,
                                 CYLINDER_VERTICAL_GRANULARITY, CYLINDER_HORIZONTAL_GRANULARIRY,
                                 CYLINDER_HEIGHT, CYLINDER_RADIUS, CYLINDER_ROTATION_ANGLE);
         std::vector<Model*> models;
@@ -358,6 +362,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
                 pyramid1->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
                 pyramid2->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
+                cylinder->SetRotation(GetClassFloat(hWnd, CYLINDER_PHI));
                 float angle = GetClassFloat(hWnd, PYRAMID_ORBIT_PHI);
                 pyramid1->SetPosition(PYRAMID_POSITION + D3DXVECTOR3(PYRAMID_ORBIT*cosf(angle),
                                                                      PYRAMID_ORBIT*sinf(angle),
@@ -416,6 +421,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         case 'Q': IncCoord(hWnd, PYRAMID_ORBIT_PHI); break;
         case 'E': DecCoord(hWnd, PYRAMID_ORBIT_PHI); break;
+
+        case 'Z': IncCoord(hWnd, CYLINDER_PHI); break;
+        case 'C': DecCoord(hWnd, CYLINDER_PHI); break;
         }
         break;
 

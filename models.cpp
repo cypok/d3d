@@ -145,7 +145,7 @@ void Pyramid::SetShaderConstants(IDirect3DDevice9 *device)
     v.x = v.y = v.z = v.w = radius;
     OK( device->SetVertexShaderConstantF(PYRAMID_RADIUS_REG, v, 1) );
 
-    v.x = v.y = v.z = v.w = (1.0f + sinf( static_cast<float>(time)*time_speed ))/2;
+    v.x = v.y = v.z = v.w = (1.0f + cosf( static_cast<float>(time)*time_speed ))/2;
     OK( device->SetVertexShaderConstantF(TIME_REG, v, 1) );
 }
 
