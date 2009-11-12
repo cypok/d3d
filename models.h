@@ -116,6 +116,7 @@ protected:
     const float radius;
     const float rotation_angle;
 
+
     void Tesselate(unsigned vertical_granularity, unsigned horizontal_granularity, DWORD color);
 
     virtual void SetShaderConstants(IDirect3DDevice9 *device);

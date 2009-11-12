@@ -11,6 +11,7 @@ struct RS
 };
 const RS RENDER_STATES[] = {
     { D3DRS_FILLMODE, D3DFILL_SOLID },
+    //{ D3DRS_FILLMODE, D3DFILL_WIREFRAME },
     { D3DRS_CULLMODE, D3DCULL_NONE },
 };
 
@@ -20,16 +21,16 @@ const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 const float         PYRAMID_RADIUS_1        = sqrtf(2.0f);
 const float         PYRAMID_RADIUS_2        = sqrtf(2.0f);
 const float         PYRAMID_ORBIT           = 2.0f;
-const float         PYRAMID_MORPHING_SPEED  = 0.01f;
+const float         PYRAMID_MORPHING_SPEED  = 0.05f;
 const DWORD         PYRAMID_COLOR           = WHITE;
 
 const TCHAR         CYLINDER_SHADER[]               = _T("cylinder.vsh");
 const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
-const unsigned      CYLINDER_VERTICAL_GRANULARITY   = 100;
-const unsigned      CYLINDER_HORIZONTAL_GRANULARIRY = 100;
+const unsigned      CYLINDER_VERTICAL_GRANULARITY   = 300;
+const unsigned      CYLINDER_HORIZONTAL_GRANULARIRY = 300;
 const float         CYLINDER_HEIGHT                 = 3.0f;
 const float         CYLINDER_RADIUS                 = 0.5f;
-const float         CYLINDER_OSCILLATION_SPEED      = 0.015f;
+const float         CYLINDER_OSCILLATION_SPEED      = 0.005f;
 const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/3;
 const DWORD         CYLINDER_COLOR                  = WHITE;
 
@@ -52,9 +53,9 @@ const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
 const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
 
-const D3DXVECTOR3   SPOT_POSITION(-4.0f, 4.0f, -1.0f);
+const D3DXVECTOR3   SPOT_POSITION(-4.0f, -4.0f, -1.0f);
 const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/3.0f)*cosf(D3DX_PI/4),
-                                -sinf(D3DX_PI/3.0f)*sinf(D3DX_PI/4),
+                                 sinf(D3DX_PI/3.0f)*sinf(D3DX_PI/4),
                                  cosf(D3DX_PI/3.0f));
 const D3DXCOLOR     SPOT_COLOR_DIFFUSE(0.0f, 0.0f, 0.7f, 0.0f);
 const D3DXCOLOR     SPOT_COLOR_SPECULAR(0.0f, 0.0f, 0.5f, 0.0f);

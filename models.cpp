@@ -295,27 +295,32 @@ void Cylinder::Tesselate(unsigned int vertical_granularity, unsigned int horizon
             unsigned shift = 0;
             shift = i*horizontal_granularity;
             if (j < horizontal_granularity)
+            {
                 shift += j;
 
-            vertices[shift] = VertexWithWeights(D3DXVECTOR3(radius*cosf(delta_phi*j),
-                                                            radius*sinf(delta_phi*j),
-                                                            delta_z*i),
-                                                D3DXVECTOR3(cosf(delta_phi*j),
-                                                            sinf(delta_phi*j),
-                                                            0.0f),
-                                                color,
-                                                1.0f - static_cast<float>(i)/vertical_granularity);
-            vertices[shift+horizontal_granularity] = VertexWithWeights(D3DXVECTOR3(radius*cosf(delta_phi*j),
-                                                                                   radius*sinf(delta_phi*j),
-                                                                                   delta_z*i),
-                                                                       D3DXVECTOR3(cosf(delta_phi*j),
-                                                                                   sinf(delta_phi*j),
-                                                                                   0.0f),
-                                                                       color,
-                                                                       1.0f - static_cast<float>(i+1)/vertical_granularity);
+                vertices[shift] = VertexWithWeights(D3DXVECTOR3(radius*cosf(delta_phi*j),
+                                                                radius*sinf(delta_phi*j),
+                                                                delta_z*i),
+                                                    D3DXVECTOR3(cosf(delta_phi*j),
+                                                                sinf(delta_phi*j),
+                                                                0.0f),
+                                                    color,
+                                                    1.0f - static_cast<float>(i)/vertical_granularity);
+                if (i + 1 == vertical_granularity)
+                {
+                    vertices[shift+horizontal_granularity] = VertexWithWeights(D3DXVECTOR3(radius*cosf(delta_phi*j),
+                                                                                           radius*sinf(delta_phi*j),
+                                                                                           delta_z*(i+1)),
+                                                                               D3DXVECTOR3(cosf(delta_phi*j),
+                                                                                           sinf(delta_phi*j),
+                                                                                           0.0f),
+                                                                               color,
+                                                                               1.0f - static_cast<float>(i+1)/vertical_granularity);
+                }
+            }
 
-            ib[ci++] = shift+horizontal_granularity;
             ib[ci++] = shift;
+            ib[ci++] = shift+horizontal_granularity;
         }
 
     }

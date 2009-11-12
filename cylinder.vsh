@@ -55,8 +55,8 @@ def c1, 1, 1, 1, 1
 ; returns: r8 (norm), r9 (vertex)
 
 ; we need to do this:
-; 1. rotate
 ; 2. w1*[B1 x v0] + w2*[B2 x v0]
+; 1. rotate
 ; 3. move
 
 m4x4    r1, v0, c35         ; r1 = [B1 x v0]
@@ -69,6 +69,9 @@ m4x4    r1, v1, c35         ; r1 = [B1 x norm]
 m4x4    r2, v1, c39         ; r2 = [B2 x norm]
 mul     r0, r1, v3.x        ; r0 = w1*[B1 x norm]
 mad     r0, r2, v3.y, r0    ; r0 = w1*[B1 x norm] + w2*[B2 x norm]
+dp3     r1, r0, r0          ; normalizing...
+rsq     r1, r1              ; ...
+mul     r0, r0, r1          ; norm is normalized
 m4x4    r8, r0, c8          ; r8 = Rotate( norm )
 
 m4x4    r9, r3, c12         ; r9 = cylinder_moving( r9 )
@@ -86,7 +89,7 @@ m4x4    oPos, r9, c4
     mul     r7, r7, r0          ; r7 = (eye - v)/|eye-v|
 
 ; ambient
-    mul     r10, v2, c64        ; r10 = C * Ia
+    mov     r10, c64        ; r10 =  Ia
 
 ; _________________________________
 ; CALCULATING DIRECTIONAL COLOR
@@ -96,8 +99,7 @@ m4x4    oPos, r9, c4
     ; diffuse
         dp3     r1, r8, -c65        ; r1 = (norm, L) << DON'T EDIT R1
         max     r2, r1, c0          ; r2 = max(r1, 0)
-        mul     r0, v2, c66         ; r0 = C * Id
-        mul     r6, r0, r2          ; r6 = C * Id * (norm, L)
+        mul     r6, c66, r2         ; r6 = Id * (norm, L)
                                     ; r6 = diffuse
 
     ; specular
@@ -108,8 +110,7 @@ m4x4    oPos, r9, c4
         mov     r1.w, c33           ; powering and checking that it's > 0
         lit     r1, r1              ; r1.z = r1^f
 
-        mul     r0, v2, c67         ; r0 = C * Is
-        mul     r2, r0, r1.z        ; r2 = C * Is * ( eye-v, 2*(norm, L)*norm - L )
+        mul     r2, c67, r1.z       ; r2 = Is * ( eye-v, 2*(norm, L)*norm - L )
 
     add     r6, r6, r2          ; color = diffuse + specular
 add     r10, r10, r6        ; ambient + directional
@@ -135,8 +136,7 @@ add     r10, r10, r6        ; ambient + directional
         sub     r2.y, c1, r2.y      ; r2 = 1 - w
         mad     r3, c[a0.x+97], r2.y, r3 ; r3 = NextColor * w + PrevColor * (1-w)
         
-        mul     r0, v2, c69         ; r0 = C * Id
-        mul     r6, r0, r3          ; r6 = C * Id * Anisotropic( (norm, L) )
+        mul     r6, c69, r3         ; r6 = Id * Anisotropic( (norm, L) )
                                     ; r6 = diffuse
 
     ; specular
@@ -154,8 +154,7 @@ add     r10, r10, r6        ; ambient + directional
         sub     r2.y, c1, r2.y      ; r2 = 1 - w
         mad     r3, c[a0.x+113], r2.y, r3 ; r3 = NextColor * w + PrevColor * (1-w)
 
-        mul     r0, v2, c70         ; r0 = C * Is
-        mul     r2, r0, r3          ; r2 = C * Is * Anisotropic( eye-v, 2*(norm, L)*norm - L )
+        mul     r2, c70, r3         ; r2 = Is * Anisotropic( eye-v, 2*(norm, L)*norm - L )
                                     ; r2 = specular
 
     add     r6, r6, r2          ; color = diffuse + specular
@@ -184,8 +183,7 @@ add     r10, r10, r6        ; ambient + directional + point
     ; diffuse
         dp3     r1, r8, r5          ; r1 = (norm, L) << DON'T EDIT R1
         max     r2, r1, c0          ; r2 = max(r1, 0)
-        mul     r0, v2, c74         ; r0 = C * Id
-        mul     r6, r0, r2          ; r6 = C * Id * (norm, L)
+        mul     r6, c74, r2         ; r6 = Id * (norm, L)
                                     ; r6 = diffuse
 
     ; specular
@@ -196,8 +194,7 @@ add     r10, r10, r6        ; ambient + directional + point
         mov     r1.w, c33           ; powering and checking that it's > 0
         lit     r1, r1              ; r1.z = r1^f
 
-        mul     r0, v2, c75         ; r0 = C * Is
-        mul     r2, r0, r1.z        ; r2 = C * Is * ( eye-v, 2*(norm, L)*norm - L )
+        mul     r2, c75, r1.z       ; r2 = Is * ( eye-v, 2*(norm, L)*norm - L )
                                     ; r2 = specular
 
     add     r6, r6, r2          ; color = diffuse + specular
@@ -221,5 +218,9 @@ add     r10, r10, r6        ; ambient + directional + point
     
 add     r10, r10, r6        ; ambient + directional + point
 
+;dp3     r0, r7, r8          ; r0 = (eye-v, norm)
+;sge     r1, r0, c0          ; r1 = (r0 >= 0) ? 1 : 0
+;mul     r10, r10, r1        ; r10 = 0 if back side of vertex is visible
+
 ; set color
-mov     oD0, r10
+mul     oD0, r10, v2        ; color *= C
