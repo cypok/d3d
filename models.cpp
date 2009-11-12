@@ -47,6 +47,18 @@ void Model::InitVDeclAndShader(IDirect3DDevice9 *device)
     ReleaseInterface(code);
 }
 
+Model::Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
+             const TCHAR * shader_file, const unsigned vcount, const unsigned icount ) : 
+        sizeof_vertex(sizeof_vertex),
+        vertex_element(vertex_element),
+        shader_file(shader_file),
+        vcount(vcount), icount(icount)
+{
+    vb = new char[sizeof_vertex*vcount];
+    ib = new DWORD[icount];
+    angle_phi = 0;
+}
+
 Model::~Model()
 {
     delete[] vb;
@@ -69,21 +81,21 @@ void Model::Render(IDirect3DDevice9 *device)
 
 void Model::SetShaderConstants(IDirect3DDevice9 *device)
 {
-    D3DXMATRIX rotation(
+    D3DXMATRIX rotation_matrix(
         cosf(angle_phi),  -sinf(angle_phi), 0, 0,
         sinf(angle_phi),  cosf(angle_phi),  0, 0,
         0,                0,                1, 0,
         0,                0,                0, 1
     );
-    D3DXMATRIX position(
+    D3DXMATRIX position_matrix(
         1.0f, 0.0f, 0.0f, position.x,
         0.0f, 1.0f, 0.0f, position.y,
         0.0f, 0.0f, 1.0f, position.z,
         0.0f, 0.0f, 0.0f, 1.0f
     );
 
-    OK( device->SetVertexShaderConstantF(ROTATION_MATRIX_REG, rotation, WORLD_DIMENSION + 1) );
-    OK( device->SetVertexShaderConstantF(POSITION_MATRIX_REG, position, WORLD_DIMENSION + 1) );
+    OK( device->SetVertexShaderConstantF(ROTATION_MATRIX_REG, rotation_matrix, WORLD_DIMENSION + 1) );
+    OK( device->SetVertexShaderConstantF(POSITION_MATRIX_REG, position_matrix, WORLD_DIMENSION + 1) );
 }
 
 void Model::SetRotation(float angle)
@@ -97,19 +109,13 @@ void Model::SetPosition(D3DXVECTOR3 position)
 }
 
 Pyramid::Pyramid(IDirect3DDevice9 *device, DWORD color, unsigned tesselation_level, const TCHAR *shader_file,
-                 D3DXVECTOR3 position, float radius)
+                 D3DXVECTOR3 position, float radius) :
+        Model(sizeof(Vertex), PYRAMID_VERTEX_ELEMENT, shader_file,
+            4 * (tesselation_level + 1) * (tesselation_level + 2),
+            8 * 3 * tesselation_level * tesselation_level),
+        radius(radius)
 {
     this->position = position;
-    this->radius = radius;
-
-    sizeof_vertex = sizeof(Vertex);
-    vertex_element = const_cast<D3DVERTEXELEMENT9 *>(PYRAMID_VERTEX_ELEMENT);
-    _tcscpy_s(this->shader_file, MAX_SHADER_FILENAME_LENGTH, shader_file);
-
-    vcount = 4 * (tesselation_level + 1) * (tesselation_level + 2);
-    icount = 8 * 3 * tesselation_level * tesselation_level;
-    vb = new Vertex[vcount];
-    ib = new DWORD[icount];
 
     Tesselate(tesselation_level, color);
 
@@ -148,8 +154,9 @@ DWORD Pyramid::AbsIndex(bool up, unsigned level, unsigned quarter, unsigned inde
 DWORD Pyramid::FindOrCreate(bool up, unsigned level, unsigned quarter, unsigned index, D3DXVECTOR3 v, D3DXVECTOR3 norm, DWORD color)
 {
     DWORD abs_index = AbsIndex(up, level, quarter, index);
-    if (vb[abs_index].color == 0) // unitialized vertex
-        vb[abs_index] = Vertex(v,
+    Vertex *vertices = reinterpret_cast<Vertex*>(vb);
+    if (vertices[abs_index].color == 0) // unitialized vertex
+        vertices[abs_index] = Vertex(v,
                                norm,
                                color ? color : ALL_COLORS[(up?0:1)*4+quarter]);
     return abs_index;
@@ -159,7 +166,8 @@ void Pyramid::Tesselate(unsigned tesselation_level, DWORD color)
 {
     unsigned ci = 0; // current index
 
-    memset(vb, 0, vcount * sizeof_vertex);
+    Vertex *vertices = reinterpret_cast<Vertex*>(vb);
+    memset(vertices, 0, vcount * sizeof_vertex);
 
     const unsigned sides[][3] = {
         {4, 0, 1},
@@ -187,11 +195,11 @@ void Pyramid::Tesselate(unsigned tesselation_level, DWORD color)
         for (unsigned l = 1; l <= tesselation_level; ++l)
         {
             unsigned a = AbsIndex(up, l-1, q, 0);
-            FindOrCreate(up, l, q, 0, vb[AbsIndex(up, l-1, q, 0)].v + to_left, norm, color);
+            FindOrCreate(up, l, q, 0, vertices[AbsIndex(up, l-1, q, 0)].v + to_left, norm, color);
             for (unsigned i = 1; i < l; ++i)
             {
                 a = AbsIndex(up, l-1, q, i-1);
-                FindOrCreate(up, l, q, i, vb[AbsIndex(up, l-1, q, i-1)].v + to_right, norm, color);
+                FindOrCreate(up, l, q, i, vertices[AbsIndex(up, l-1, q, i-1)].v + to_right, norm, color);
                 Add3Indices(&ci,
                     AbsIndex(up, l, q, i),
                     AbsIndex(up, l, q, i-1),
@@ -202,7 +210,7 @@ void Pyramid::Tesselate(unsigned tesselation_level, DWORD color)
                     AbsIndex(up, l-1, q, i));
             }
             a = AbsIndex(up, l-1, q, l-1);
-            FindOrCreate(up, l, q, l, vb[AbsIndex(up, l-1, q, l-1)].v + to_right, norm, color);
+            FindOrCreate(up, l, q, l, vertices[AbsIndex(up, l-1, q, l-1)].v + to_right, norm, color);
             Add3Indices(&ci,
                 AbsIndex(up, l, q, l),
                 AbsIndex(up, l, q, l-1),

@@ -2,7 +2,6 @@
 #include "stdafx.h"
 #include "helper.h"
 
-const unsigned MAX_SHADER_FILENAME_LENGTH = 256;
 
 const D3DVERTEXELEMENT9 PYRAMID_VERTEX_ELEMENT[] =
 {
@@ -32,14 +31,14 @@ protected:
     IDirect3DVertexShader9 *vertex_shader;
     IDirect3DVertexDeclaration9 *vertex_declaration;
 
-    Vertex *vb;
+    void *vb;
     DWORD *ib;
-    unsigned vcount;
-    unsigned icount;
+    const unsigned vcount;
+    const unsigned icount;
 
-    unsigned sizeof_vertex;
-    D3DVERTEXELEMENT9 *vertex_element;
-    TCHAR shader_file[MAX_SHADER_FILENAME_LENGTH+1];
+    const unsigned sizeof_vertex;
+    const D3DVERTEXELEMENT9 *vertex_element;
+    const TCHAR *shader_file;
 
     float angle_phi;
     D3DXVECTOR3 position;
@@ -50,6 +49,8 @@ protected:
     virtual void Draw(IDirect3DDevice9 *device) = 0;
 
 public:
+    Model::Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
+             const TCHAR * shader_file, const unsigned vcount, const unsigned icount);
     void Render(IDirect3DDevice9 *device);
     void SetRotation(float angle);
     void SetPosition(D3DXVECTOR3 position);
@@ -59,7 +60,7 @@ public:
 class Pyramid : public Model
 {
 protected:
-    float radius;
+    const float radius;
 
     void Add3Indices(unsigned *ci, DWORD i1, DWORD i2, DWORD i3);
     DWORD AbsIndex(bool up, unsigned level, unsigned quarter, unsigned index);
