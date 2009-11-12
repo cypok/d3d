@@ -357,8 +357,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             }
         }
     }
-    catch(...)
+    catch(std::exception &e)
     {
+        MessageBoxA(NULL, e.what(), "Error", MB_ICONERROR);
     }
 
     // CLEANING
