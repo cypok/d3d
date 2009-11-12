@@ -60,6 +60,12 @@ Model::Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_eleme
     vb = new char[sizeof_vertex*vcount];
     ib = new DWORD[icount];
     angle_phi = 0;
+
+    device = NULL;
+    vertex_buffer = NULL;
+    index_buffer = NULL;
+    vertex_shader = NULL;
+    vertex_declaration = NULL;
 }
 
 Model::~Model()

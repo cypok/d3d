@@ -13,7 +13,7 @@ void OK(HRESULT result)
             sprintf(buffer+sizeof(buffer)/sizeof(buffer[0])-9, 8+1, "%08x", result);
         #endif
         MessageBox(NULL, buffer, _T("ERROR"), MB_ICONERROR | MB_OK);
-        throw std::exception();
+        throw std::exception("DirectX error");
     }
 }
 

@@ -77,7 +77,7 @@ protected:
     virtual void Draw(IDirect3DDevice9 *device) = 0;
 
 public:
-    Model::Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
+    Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
              const TCHAR * shader_file, const unsigned vcount, const unsigned icount,
              D3DXVECTOR3 position, float time_speed);
     void Render(IDirect3DDevice9 *device);
@@ -85,6 +85,10 @@ public:
     void SetPosition(D3DXVECTOR3 position);
     static void SetTime(unsigned time);
     virtual ~Model();
+private:
+    // no copying
+    Model(const Model &);
+    Model & operator=(const Model &);
 };
 
 class Pyramid : public Model
