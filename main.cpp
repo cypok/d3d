@@ -34,10 +34,17 @@ const float         CYLINDER_OSCILLATION_SPEED      = 0.005f;
 const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/3;
 const DWORD         CYLINDER_COLOR                  = WHITE;
 
+const DWORD         PLANE_COLOR         = D3DCOLOR_XRGB(200, 200, 255);
+const TCHAR         PLANE_SHADER[]      = _T("plane.vsh");
+const D3DXVECTOR3   PLANE_POSITION      = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
+const D3DXVECTOR3   PLANE_NORMAL        = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+const unsigned      PLANE_GRANULARITY   = 500;
+const float         PLANE_SIZE          = 20.0f;
+
 const unsigned TIMER_FREQ = 10;
 
-const int WINDOW_WIDTH = 700;
-const int WINDOW_HEIGHT = 700;
+const int WINDOW_WIDTH = 750;
+const int WINDOW_HEIGHT = 750;
 
 // Light sources!
 const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
@@ -53,14 +60,14 @@ const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
 const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
 
-const D3DXVECTOR3   SPOT_POSITION(-4.0f, -4.0f, -1.0f);
-const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/3.0f)*cosf(D3DX_PI/4),
-                                 sinf(D3DX_PI/3.0f)*sinf(D3DX_PI/4),
-                                 cosf(D3DX_PI/3.0f));
+const D3DXVECTOR3   SPOT_POSITION(-4.0f, -4.0f, 2.5f);
+const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/2.5f)*cosf(D3DX_PI/4),
+                                 sinf(D3DX_PI/2.5f)*sinf(D3DX_PI/4),
+                                 -cosf(D3DX_PI/2.5f));
 const D3DXCOLOR     SPOT_COLOR_DIFFUSE(0.0f, 0.0f, 0.7f, 0.0f);
 const D3DXCOLOR     SPOT_COLOR_SPECULAR(0.0f, 0.0f, 0.5f, 0.0f);
 const D3DXVECTOR3   SPOT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
-const D3DXVECTOR2   SPOT_RANGE_FACTOR(0.99f, 0.97f);
+const D3DXVECTOR2   SPOT_RANGE_FACTOR(0.99f, 0.98f);
 
 const float SPECULAR_DEGRADATION = 0.1f;
 
@@ -283,6 +290,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     Pyramid *pyramid1 = NULL;
     Pyramid *pyramid2 = NULL;
     Cylinder *cylinder = NULL;
+    Plane *plane = NULL;
 
     MSG msg = {0};
     try
@@ -329,10 +337,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         cylinder = new Cylinder(device, CYLINDER_COLOR, CYLINDER_SHADER, CYLINDER_POSITION, CYLINDER_OSCILLATION_SPEED,
                                 CYLINDER_VERTICAL_GRANULARITY, CYLINDER_HORIZONTAL_GRANULARIRY,
                                 CYLINDER_HEIGHT, CYLINDER_RADIUS, CYLINDER_ROTATION_ANGLE);
+        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
         std::vector<Model*> models;
         models.push_back(pyramid1);
         models.push_back(pyramid2);
         models.push_back(cylinder);
+        models.push_back(plane);
 
         // SHOWING WINDOW
         ShowWindow(hWnd, nCmdShow);
@@ -387,6 +397,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     delete pyramid1;
     delete pyramid2;
     delete cylinder;
+    delete plane;
 
     return (int) msg.wParam;
 }

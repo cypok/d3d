@@ -4,8 +4,8 @@ vs_1_1
 ; VIEW
 ; c3 : eye
 ; c4-c7  : view matrix
-; c8-c11 : pyramid rotation matrix
-; c12-c15 : pyramid position matrix
+; c8-c11 : rotation matrix
+; c12-c15 : position matrix
 ; _________________________________
 ; OBJECT PROPERTIES
 ; c35-c38 : first bone (B1)
@@ -37,7 +37,7 @@ vs_1_1
 ; ANISOTROPIC COLORS
 ;   c96 : diffuse colors count
 ;   c97...c111 : diffuse colors
-;   c112 : spucular colors count
+;   c112 : specular colors count
 ;   c113...c127 : specular colors
 
 dcl_position v0             ; vertex

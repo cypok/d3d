@@ -4,7 +4,7 @@
 
 const unsigned BONES_COUNT = 2;
 
-const D3DVERTEXELEMENT9 PYRAMID_VERTEX_ELEMENT[] =
+const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 {
     {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
     {0, 12, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
@@ -23,7 +23,7 @@ struct Vertex
             DWORD color = BLACK              ) : v(v), norm(norm), color(color) {}
 };
 
-const D3DVERTEXELEMENT9 CYLINDER_VERTEX_ELEMENT[] =
+const D3DVERTEXELEMENT9 VERTEX_WITH_WEIGHTS_ELEMENT[] =
 {
     {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
     {0, 12, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
@@ -126,4 +126,20 @@ public:
              D3DXVECTOR3 position, float time_speed,
              unsigned vertical_granularity, unsigned horizontal_granularity,
              float height, float radius, float rotation_angle);
+};
+
+class Plane : public Model
+{
+protected:
+    const D3DXVECTOR3 normal;
+    const float size;
+
+    void Tesselate(unsigned granularity, DWORD color);
+
+    void Draw(IDirect3DDevice9 *device);
+
+public:
+    Plane(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
+          D3DXVECTOR3 position, D3DXVECTOR3 normal,
+          unsigned granularity, float size);
 };

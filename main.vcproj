@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\plane.vsh"
+				>
+			</File>
+			<File
 				RelativePath=".\pyramid.vsh"
 				>
 			</File>
