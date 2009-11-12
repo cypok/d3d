@@ -11,17 +11,26 @@ struct RS
 };
 const RS RENDER_STATES[] = {
     { D3DRS_FILLMODE, D3DFILL_SOLID },
-    //{ D3DRS_CULLMODE, D3DCULL_NONE },
+    { D3DRS_CULLMODE, D3DCULL_NONE },
 };
 
-const TCHAR PYRAMID_SHADER[] = _T("pyramid.vsh");
-const unsigned PYRAMID_TL = 100;
-const D3DXVECTOR3 PYRAMID_POSITION = D3DXVECTOR3(0.0f, 0.0f, 2.0f);
-const float PYRAMID_RADIUS_1 = sqrtf(2.0f);
-const float PYRAMID_RADIUS_2 = 1.0f;
-const float PYRAMID_ORBIT = 1.5f;
+const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");
+const unsigned      PYRAMID_GRANULARITY     = 100;
+const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+const float         PYRAMID_RADIUS_1        = sqrtf(2.0f);
+const float         PYRAMID_RADIUS_2        = 1.0f;
+const float         PYRAMID_ORBIT           = 2.0f;
+const float         PYRAMID_MORPHING_SPEED  = 0.02f;
 
-const float TIME_SPEED = 0.2f;
+const TCHAR         CYLINDER_SHADER[]               = _T("cylinder.vsh");
+const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+const unsigned      CYLINDER_VERTICAL_GRANULARITY   = 100;
+const unsigned      CYLINDER_HORIZONTAL_GRANULARIRY = 100;
+const float         CYLINDER_HEIGHT                 = 3.0f;
+const float         CYLINDER_RADIUS                 = 0.5f;
+const float         CYLINDER_OSCILLATION_SPEED      = 0.015f;
+const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/8;
+
 const unsigned TIMER_FREQ = 10;
 
 const int WINDOW_WIDTH = 700;
@@ -166,14 +175,6 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, IDirect3DDevice9 **device)
         );
 }
 
-void SetTimeToShader(IDirect3DDevice9 *device, LONG time)
-{
-    // time: 0..inf -> 0..1
-    D3DXVECTOR4 v;
-    v.x = v.y = v.z = v.w = (1.0f + sinf(D3DX_PI/2 + D3DXToRadian( static_cast<float>(time*TIME_SPEED) )))/2;
-    OK( device->SetVertexShaderConstantF(TIME_REG, v, 1) );
-}
-
 void SetViewMatrix(IDirect3DDevice9 *device, float rho, float tetha, float phi)
 {   
     // View Matrix
@@ -258,13 +259,13 @@ void SetLights(IDirect3DDevice9 *device)
                                             ANISOTROPIC_SPECULAR_COLORS_COUNT) );
 }
 
-void Render(IDirect3DDevice9 *device, Pyramid *pyramid1, Pyramid *pyramid2)
+void Render(IDirect3DDevice9 *device, std::vector<Model*> models)
 {
     OK( device->BeginScene() );
     OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, GRAY, 1.0f, 0 ) );
 
-    pyramid1->Render(device);
-    pyramid2->Render(device);
+    for(unsigned i = 0; i < models.size(); ++i)
+        models[i]->Render(device);
 
     OK( device->EndScene() );
     OK( device->Present(NULL, NULL, NULL, NULL) );
@@ -276,6 +277,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     IDirect3DDevice9 *device = NULL;
     Pyramid *pyramid1 = NULL;
     Pyramid *pyramid2 = NULL;
+    Cylinder *cylinder = NULL;
 
     MSG msg = {0};
     try
@@ -315,8 +317,17 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        pyramid1 = new Pyramid(device, WHITE, PYRAMID_TL, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_RADIUS_1);
-        pyramid2 = new Pyramid(device, WHITE, PYRAMID_TL, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_RADIUS_2);
+        pyramid1 = new Pyramid(device, WHITE, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
+            PYRAMID_GRANULARITY, PYRAMID_RADIUS_1);
+        pyramid2 = new Pyramid(device, WHITE, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
+            PYRAMID_GRANULARITY, PYRAMID_RADIUS_2);
+        cylinder = new Cylinder(device, YELLOW, CYLINDER_SHADER, CYLINDER_POSITION, CYLINDER_OSCILLATION_SPEED,
+                                CYLINDER_VERTICAL_GRANULARITY, CYLINDER_HORIZONTAL_GRANULARIRY,
+                                CYLINDER_HEIGHT, CYLINDER_RADIUS, CYLINDER_ROTATION_ANGLE);
+        std::vector<Model*> models;
+        models.push_back(pyramid1);
+        models.push_back(pyramid2);
+        models.push_back(cylinder);
 
         // SHOWING WINDOW
         ShowWindow(hWnd, nCmdShow);
@@ -338,12 +349,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             }
             else
             {
-                SetTimeToShader(device, GetTime(hWnd));
+                Model::SetTime(GetTime(hWnd));
                 SetViewMatrix(device,
                     GetClassFloat(hWnd, RHO),
                     GetClassFloat(hWnd, THETA),
                     GetClassFloat(hWnd, PHI)
                 );
+
                 pyramid1->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
                 pyramid2->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
                 float angle = GetClassFloat(hWnd, PYRAMID_ORBIT_PHI);
@@ -353,7 +365,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                 pyramid2->SetPosition(PYRAMID_POSITION + D3DXVECTOR3(-PYRAMID_ORBIT*cosf(angle),
                                                                      -PYRAMID_ORBIT*sinf(angle),
                                                                      0));
-                Render(device, pyramid1, pyramid2);
+                Render(device, models);
             }
         }
     }
@@ -368,6 +380,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
     delete pyramid1;
     delete pyramid2;
+    delete cylinder;
 
     return (int) msg.wParam;
 }

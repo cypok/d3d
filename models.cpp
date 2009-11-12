@@ -14,6 +14,7 @@ const D3DXVECTOR3 INITIAL_PYRAMID[] = {       // it is generated for radius = sq
 const TCHAR PYRAMID_SHADER_FILE[] = _T("pyramid.vsh");
 const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
 
+unsigned Model::time = 0;
 
 void Model::InitVIB(IDirect3DDevice9 *device)
 {
@@ -48,11 +49,13 @@ void Model::InitVDeclAndShader(IDirect3DDevice9 *device)
 }
 
 Model::Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
-             const TCHAR * shader_file, const unsigned vcount, const unsigned icount ) : 
+             const TCHAR * shader_file, const unsigned vcount, const unsigned icount,
+             D3DXVECTOR3 position, float time_speed) : 
         sizeof_vertex(sizeof_vertex),
         vertex_element(vertex_element),
         shader_file(shader_file),
-        vcount(vcount), icount(icount)
+        vcount(vcount), icount(icount),
+        position(position), time_speed(time_speed)
 {
     vb = new char[sizeof_vertex*vcount];
     ib = new DWORD[icount];
@@ -87,14 +90,14 @@ void Model::SetShaderConstants(IDirect3DDevice9 *device)
         0,                0,                1, 0,
         0,                0,                0, 1
     );
+    OK( device->SetVertexShaderConstantF(ROTATION_MATRIX_REG, rotation_matrix, WORLD_DIMENSION + 1) );
+
     D3DXMATRIX position_matrix(
         1.0f, 0.0f, 0.0f, position.x,
         0.0f, 1.0f, 0.0f, position.y,
         0.0f, 0.0f, 1.0f, position.z,
         0.0f, 0.0f, 0.0f, 1.0f
     );
-
-    OK( device->SetVertexShaderConstantF(ROTATION_MATRIX_REG, rotation_matrix, WORLD_DIMENSION + 1) );
     OK( device->SetVertexShaderConstantF(POSITION_MATRIX_REG, position_matrix, WORLD_DIMENSION + 1) );
 }
 
@@ -108,16 +111,21 @@ void Model::SetPosition(D3DXVECTOR3 position)
     this->position = position;
 }
 
-Pyramid::Pyramid(IDirect3DDevice9 *device, DWORD color, unsigned tesselation_level, const TCHAR *shader_file,
-                 D3DXVECTOR3 position, float radius) :
+void Model::SetTime(unsigned time)
+{
+    Model::time = time;
+}
+
+Pyramid::Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
+                 D3DXVECTOR3 position, float time_speed,
+                 unsigned granularity, float radius) :
         Model(sizeof(Vertex), PYRAMID_VERTEX_ELEMENT, shader_file,
-            4 * (tesselation_level + 1) * (tesselation_level + 2),
-            8 * 3 * tesselation_level * tesselation_level),
+            4 * (granularity + 1) * (granularity + 2),
+            8 * 3 * granularity * granularity,
+            position, time_speed),
         radius(radius)
 {
-    this->position = position;
-
-    Tesselate(tesselation_level, color);
+    Tesselate(granularity, color);
 
     InitVIB(device);
     InitVDeclAndShader(device);
@@ -130,6 +138,9 @@ void Pyramid::SetShaderConstants(IDirect3DDevice9 *device)
     D3DXVECTOR4 v;
     v.x = v.y = v.z = v.w = radius;
     OK( device->SetVertexShaderConstantF(PYRAMID_RADIUS_REG, v, 1) );
+
+    v.x = v.y = v.z = v.w = (1.0f + sinf( static_cast<float>(time)*time_speed ))/2;
+    OK( device->SetVertexShaderConstantF(TIME_REG, v, 1) );
 }
 
 void Pyramid::Draw(IDirect3DDevice9 *device)
@@ -137,7 +148,6 @@ void Pyramid::Draw(IDirect3DDevice9 *device)
     OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vcount, 0, icount/3) );
 }
 
-// PYRAMID TESSELATION ----------------------------------------------------------------------------------
 void Pyramid::Add3Indices(unsigned *ci, DWORD i1, DWORD i2, DWORD i3)
 {
     ib[(*ci)++] = i1;
@@ -162,7 +172,7 @@ DWORD Pyramid::FindOrCreate(bool up, unsigned level, unsigned quarter, unsigned 
     return abs_index;
 }
 
-void Pyramid::Tesselate(unsigned tesselation_level, DWORD color)
+void Pyramid::Tesselate(unsigned granularity, DWORD color)
 {
     unsigned ci = 0; // current index
 
@@ -184,15 +194,15 @@ void Pyramid::Tesselate(unsigned tesselation_level, DWORD color)
         bool up = ( sides[j][0] == 4 );
         unsigned q = sides[j][up ? 1 : 2];
         D3DXVECTOR3 top = INITIAL_PYRAMID[sides[j][0]]*radius/sqrtf(2);
-        D3DXVECTOR3 to_left = (INITIAL_PYRAMID[sides[j][1]]*radius/sqrtf(2) - top)/tesselation_level;
-        D3DXVECTOR3 to_right = (INITIAL_PYRAMID[sides[j][2]]*radius/sqrtf(2) - top)/tesselation_level;
+        D3DXVECTOR3 to_left = (INITIAL_PYRAMID[sides[j][1]]*radius/sqrtf(2) - top)/static_cast<float>(granularity);
+        D3DXVECTOR3 to_right = (INITIAL_PYRAMID[sides[j][2]]*radius/sqrtf(2) - top)/static_cast<float>(granularity);
         D3DXVECTOR3 norm;
         D3DXVec3Cross(&norm, &to_right, &to_left);
         D3DXVec3Normalize(&norm, &norm);
 
         FindOrCreate(up, 0, q, 0, top, norm, color);
 
-        for (unsigned l = 1; l <= tesselation_level; ++l)
+        for (unsigned l = 1; l <= granularity; ++l)
         {
             unsigned a = AbsIndex(up, l-1, q, 0);
             FindOrCreate(up, l, q, 0, vertices[AbsIndex(up, l-1, q, 0)].v + to_left, norm, color);
@@ -216,5 +226,91 @@ void Pyramid::Tesselate(unsigned tesselation_level, DWORD color)
                 AbsIndex(up, l, q, l-1),
                 AbsIndex(up, l-1, q, l-1));
         }
+    }
+}
+
+Cylinder::Cylinder(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
+                   D3DXVECTOR3 position, float time_speed,
+                   unsigned vertical_granularity, unsigned horizontal_granularity,
+                   float height, float radius,
+                   float rotation_angle) :
+        Model(sizeof(VertexWithWeights), CYLINDER_VERTEX_ELEMENT, shader_file,
+            (vertical_granularity+1)*horizontal_granularity,
+            2*(horizontal_granularity+1)*vertical_granularity,
+            position, time_speed),
+        height(height), radius(radius), rotation_angle(rotation_angle)
+{
+    Tesselate(vertical_granularity, horizontal_granularity, color);
+
+    InitVIB(device);
+    InitVDeclAndShader(device);
+}
+
+void Cylinder::SetShaderConstants(IDirect3DDevice9 *device)
+{
+    Model::SetShaderConstants(device);
+
+    D3DXMATRIX static_bone(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    );
+    OK( device->SetVertexShaderConstantF(BONE1_MATRIX_REG, static_bone, WORLD_DIMENSION + 1) );
+
+    float alpha = rotation_angle*sinf( static_cast<float>(time)*time_speed );
+    D3DXMATRIX rotation_bone(
+        cosf(alpha), 0, -sinf(alpha), 0,
+        0, 1, 0, 0,
+        sinf(alpha), 0, cosf(alpha), 0,
+        0, 0, 0, 1
+    );
+    OK( device->SetVertexShaderConstantF(BONE2_MATRIX_REG, rotation_bone, WORLD_DIMENSION + 1) );
+}
+
+void Cylinder::Draw(IDirect3DDevice9 *device)
+{
+    OK( device->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP, 0, 0, vcount, 0, icount-2) );
+}
+
+void Cylinder::Tesselate(unsigned int vertical_granularity, unsigned int horizontal_granularity, DWORD color)
+{
+    float delta_z = height/vertical_granularity;
+    float delta_phi = 2*D3DX_PI/horizontal_granularity;
+
+    VertexWithWeights *vertices = reinterpret_cast<VertexWithWeights*>(vb);
+
+    unsigned ci = 0; // current index index for adding
+
+    for (unsigned i = 0; i < vertical_granularity; ++i)
+    {
+        for (unsigned j = 0; j < horizontal_granularity+1; ++j)
+        {
+            unsigned shift = 0;
+            shift = i*horizontal_granularity;
+            if (j < horizontal_granularity)
+                shift += j;
+
+            vertices[shift] = VertexWithWeights(D3DXVECTOR3(radius*cosf(delta_phi*j),
+                                                            radius*sinf(delta_phi*j),
+                                                            delta_z*i),
+                                                D3DXVECTOR3(cosf(delta_phi*j),
+                                                            sinf(delta_phi*j),
+                                                            0.0f),
+                                                color,
+                                                1.0f - static_cast<float>(i)/vertical_granularity);
+            vertices[shift+horizontal_granularity] = VertexWithWeights(D3DXVECTOR3(radius*cosf(delta_phi*j),
+                                                                                   radius*sinf(delta_phi*j),
+                                                                                   delta_z*i),
+                                                                       D3DXVECTOR3(cosf(delta_phi*j),
+                                                                                   sinf(delta_phi*j),
+                                                                                   0.0f),
+                                                                       color,
+                                                                       1.0f - static_cast<float>(i+1)/vertical_granularity);
+
+            ib[ci++] = shift+horizontal_granularity;
+            ib[ci++] = shift;
+        }
+
     }
 }

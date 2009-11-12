@@ -12,6 +12,8 @@ enum {
     TIME_REG = 32,
     SPECULAR_DEGRADATION_REG = 33,
     PYRAMID_RADIUS_REG = 34,
+    BONE1_MATRIX_REG = 35,
+    BONE2_MATRIX_REG = 39,
 
     // light sources
     SCENE_COLOR_AMBIENT_REG = 64,
