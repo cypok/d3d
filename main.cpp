@@ -16,9 +16,12 @@ const RS RENDER_STATES[] = {
 
 const TCHAR PYRAMID_SHADER[] = _T("pyramid.vsh");
 const unsigned PYRAMID_TL = 100;
-const D3DXVECTOR3 PYRAMID_POSITION = D3DXVECTOR3(1.5f, 1.5f, 0.0f);
+const D3DXVECTOR3 PYRAMID_POSITION = D3DXVECTOR3(0.0f, 0.0f, 2.0f);
+const float PYRAMID_RADIUS_1 = sqrtf(2.0f);
+const float PYRAMID_RADIUS_2 = 1.0f;
+const float PYRAMID_ORBIT = 1.5f;
 
-const float TIME_SPEED = 3.0f;
+const float TIME_SPEED = 0.2f;
 const unsigned TIMER_FREQ = 10;
 
 const int WINDOW_WIDTH = 700;
@@ -31,7 +34,7 @@ const D3DXVECTOR3   DIRECTIONAL_VECTOR( sinf(D3DX_PI/6)*cosf(D3DX_PI/4),
                                         sinf(D3DX_PI/6)*sinf(D3DX_PI/4),
                                        -cosf(D3DX_PI/6));
 const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(0.7f, 0.0f, 0.0f, 0.0f);
-const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.3f, 0.0f, 0.0f, 0.0f);
+const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.9f, 0.9f, 0.9f, 0.0f);
 
 const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, -1.5f);
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
@@ -114,7 +117,6 @@ const Coord COORDS[] = {
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID ORBIT PHI
 };
 
-const float PYRAMID_ORBIT = 1.5f;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -313,8 +315,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        pyramid1 = new Pyramid(device, WHITE, PYRAMID_TL, PYRAMID_SHADER, PYRAMID_POSITION, sqrtf(2));
-        pyramid2 = new Pyramid(device, WHITE, PYRAMID_TL, PYRAMID_SHADER, PYRAMID_POSITION, sqrtf(2));
+        pyramid1 = new Pyramid(device, WHITE, PYRAMID_TL, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_RADIUS_1);
+        pyramid2 = new Pyramid(device, WHITE, PYRAMID_TL, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_RADIUS_2);
 
         // SHOWING WINDOW
         ShowWindow(hWnd, nCmdShow);
@@ -345,12 +347,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                 pyramid1->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
                 pyramid2->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
                 float angle = GetClassFloat(hWnd, PYRAMID_ORBIT_PHI);
-                pyramid1->SetPosition(D3DXVECTOR3(PYRAMID_ORBIT*cosf(angle),
-                                                  PYRAMID_ORBIT*sinf(angle),
-                                                  0));
-                pyramid2->SetPosition(D3DXVECTOR3(-PYRAMID_ORBIT*cosf(angle),
-                                                  -PYRAMID_ORBIT*sinf(angle),
-                                                  0));
+                pyramid1->SetPosition(PYRAMID_POSITION + D3DXVECTOR3(PYRAMID_ORBIT*cosf(angle),
+                                                                     PYRAMID_ORBIT*sinf(angle),
+                                                                     0));
+                pyramid2->SetPosition(PYRAMID_POSITION + D3DXVECTOR3(-PYRAMID_ORBIT*cosf(angle),
+                                                                     -PYRAMID_ORBIT*sinf(angle),
+                                                                     0));
                 Render(device, pyramid1, pyramid2);
             }
         }
