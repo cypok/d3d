@@ -21,22 +21,22 @@ const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 const float         PYRAMID_RADIUS_1        = sqrtf(2.0f);
 const float         PYRAMID_RADIUS_2        = sqrtf(2.0f);
 const float         PYRAMID_ORBIT           = 2.0f;
-const float         PYRAMID_MORPHING_SPEED  = 0.05f;
-const DWORD         PYRAMID_COLOR           = WHITE;
+const float         PYRAMID_MORPHING_SPEED  = 0.00f;
+const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(200, 40, 40);
 
 const TCHAR         CYLINDER_SHADER[]               = _T("cylinder.vsh");
-const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, 0.0f, -4.0f);
 const unsigned      CYLINDER_VERTICAL_GRANULARITY   = 300;
 const unsigned      CYLINDER_HORIZONTAL_GRANULARIRY = 300;
 const float         CYLINDER_HEIGHT                 = 3.0f;
 const float         CYLINDER_RADIUS                 = 0.5f;
 const float         CYLINDER_OSCILLATION_SPEED      = 0.005f;
-const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/3;
-const DWORD         CYLINDER_COLOR                  = WHITE;
+const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/6;
+const DWORD         CYLINDER_COLOR                  = D3DCOLOR_XRGB(100, 200, 100);
 
-const DWORD         PLANE_COLOR         = D3DCOLOR_XRGB(200, 200, 255);
+const DWORD         PLANE_COLOR         = D3DCOLOR_XRGB(70, 70, 200);
 const TCHAR         PLANE_SHADER[]      = _T("plane.vsh");
-const D3DXVECTOR3   PLANE_POSITION      = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
+const D3DXVECTOR3   PLANE_POSITION      = D3DXVECTOR3(0.0f, 0.0f, -4.0f);
 const D3DXVECTOR3   PLANE_NORMAL        = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 const unsigned      PLANE_GRANULARITY   = 500;
 const float         PLANE_SIZE          = 20.0f;
@@ -52,21 +52,21 @@ const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 const D3DXVECTOR3   DIRECTIONAL_VECTOR( sinf(D3DX_PI/6)*cosf(D3DX_PI/4),
                                         sinf(D3DX_PI/6)*sinf(D3DX_PI/4),
                                        -cosf(D3DX_PI/6));
-const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(0.7f, 0.0f, 0.0f, 0.0f);
+const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.8f, 0.8f, 0.8f, 0.0f);
 
 const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, -1.5f);
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
-const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
+const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(1.0f, 0.5f, 1.0f);
 
-const D3DXVECTOR3   SPOT_POSITION(-4.0f, -4.0f, 2.5f);
+const D3DXVECTOR3   SPOT_POSITION(-4.0f, -4.0f, 1.0f);
 const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/2.5f)*cosf(D3DX_PI/4),
                                  sinf(D3DX_PI/2.5f)*sinf(D3DX_PI/4),
                                  -cosf(D3DX_PI/2.5f));
-const D3DXCOLOR     SPOT_COLOR_DIFFUSE(0.0f, 0.0f, 0.7f, 0.0f);
-const D3DXCOLOR     SPOT_COLOR_SPECULAR(0.0f, 0.0f, 0.5f, 0.0f);
-const D3DXVECTOR3   SPOT_ATTENUATION_FACTOR(1.0f, 0.5f, 0.2f);
+const D3DXCOLOR     SPOT_COLOR_DIFFUSE(0.0f, 0.9f, 0.9f, 0.0f);
+const D3DXCOLOR     SPOT_COLOR_SPECULAR(0.0f, 0.9f, 0.8f, 0.0f);
+const D3DXVECTOR3   SPOT_ATTENUATION_FACTOR(1.0f, 1.0f, 1.2f);
 const D3DXVECTOR2   SPOT_RANGE_FACTOR(0.99f, 0.98f);
 
 const float SPECULAR_DEGRADATION = 0.1f;

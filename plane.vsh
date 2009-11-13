@@ -94,15 +94,15 @@ m4x4    oPos, r9, c4
         mul     r2, c67, r1.z       ; r2 = Is * ( eye-v, 2*(norm, L)*norm - L )
         
         ; extra specular anisotropic
-        dp3     r0, r7, r8          ; r0 = (eye-v, norm)
-        mul     r0, r0, c96         ; r0 = float index of anisotropic color
-        mov     a0.x, r0.x          ; a0 = index of anisotropic color
-        frc     r1.y, r0            ; r1 = r0 - [r0] = Weight
-        mul     r3, c[a0.x+98], r1.y; r3 = NextColor * w
-        sub     r1.y, c1, r1.y      ; r1 = 1 - w
-        mad     r3, c[a0.x+97], r1.y, r3 ; r3 = NextColor * w + PrevColor * (1-w)
+        ;dp3     r0, r7, r8          ; r0 = (eye-v, norm)
+        ;mul     r0, r0, c96         ; r0 = float index of anisotropic color
+        ;mov     a0.x, r0.x          ; a0 = index of anisotropic color
+        ;frc     r1.y, r0            ; r1 = r0 - [r0] = Weight
+        ;mul     r3, c[a0.x+98], r1.y; r3 = NextColor * w
+        ;sub     r1.y, c1, r1.y      ; r1 = 1 - w
+        ;mad     r3, c[a0.x+97], r1.y, r3 ; r3 = NextColor * w + PrevColor * (1-w)
         
-        mul     r2, r2, r3
+        ;mul     r2, r2, r3
 
     add     r6, r6, r2          ; color = diffuse + specular
 
