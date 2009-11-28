@@ -181,6 +181,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cylinder_shadow.vsh"
+				>
+			</File>
+			<File
 				RelativePath=".\helper.cpp"
 				>
 			</File>
@@ -206,6 +210,10 @@
 			</File>
 			<File
 				RelativePath=".\pyramid.vsh"
+				>
+			</File>
+			<File
+				RelativePath=".\pyramid_shadow.vsh"
 				>
 			</File>
 			<File

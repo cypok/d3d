@@ -16,17 +16,17 @@ const RS RENDER_STATES[] = {
 };
 
 const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");
-const TCHAR         PYRAMID_SHADOW_SHADER[] = _T("pyramid.vsh");
+const TCHAR         PYRAMID_SHADOW_SHADER[] = _T("pyramid_shadow.vsh");
 const unsigned      PYRAMID_GRANULARITY     = 300;
-const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, -0.5f);
 const float         PYRAMID_RADIUS_1        = sqrtf(1.5f);
 const float         PYRAMID_RADIUS_2        = sqrtf(1.5f);
 const float         PYRAMID_ORBIT           = 3.0f;
-const float         PYRAMID_MORPHING_SPEED  = 0.00f;
+const float         PYRAMID_MORPHING_SPEED  = 0.05f;
 const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(200, 40, 40);
 
 const TCHAR         CYLINDER_SHADER[]               = _T("cylinder.vsh");
-const TCHAR         CYLINDER_SHADOW_SHADER[]        = _T("cylinder.vsh");
+const TCHAR         CYLINDER_SHADOW_SHADER[]        = _T("cylinder_shadow.vsh");
 const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
 const unsigned      CYLINDER_VERTICAL_GRANULARITY   = 200;
 const unsigned      CYLINDER_HORIZONTAL_GRANULARIRY = 200;
@@ -192,6 +192,36 @@ void SetLights(IDirect3DDevice9 *device)
 
 }
 
+D3DXMATRIX CreateShadowMatrix(D3DXVECTOR3 light_pos, D3DXVECTOR3 plane_pos, D3DXVECTOR3 plane_norm)
+{
+    D3DXVECTOR3 &l = light_pos;
+    float d = D3DXVec3Dot(&plane_pos, &plane_norm);
+    D3DXVECTOR3 &n = plane_norm;
+
+    D3DXMATRIX M1( d, 0, 0, -d*l.x,
+                   0, d, 0, -d*l.y,
+                   0, 0, d, -d*l.z,
+                   0, 0, 0,  0 );
+
+    float pn = D3DXVec3Dot(&l, &n);
+    D3DXMATRIX M2( pn, 0,  0,  0,
+                   0,  pn, 0,  0,
+                   0,  0,  pn, 0,
+                   0,  0,  0,  0 );
+
+    D3DXMATRIX M3( l.x*n.x, l.x*n.y, l.x*n.z, 0,
+                   l.y*n.x, l.y*n.y, l.y*n.z, 0,
+                   l.z*n.x, l.z*n.y, l.z*n.z, 0,
+                   0,       0,       0,       0 );
+
+    D3DXMATRIX M4( 0,   0,   0,  0,
+                   0,   0,   0,  0,
+                   0,   0,   0,  0,
+                   n.x, n.y, n.z, -pn );
+
+    return M1-M2+M3+M4;
+}
+
 void Render(IDirect3DDevice9 *device, std::vector<Model*> models)
 {
     OK( device->BeginScene() );
@@ -259,11 +289,17 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                                 CYLINDER_VERTICAL_GRANULARITY, CYLINDER_HORIZONTAL_GRANULARIRY,
                                 CYLINDER_HEIGHT, CYLINDER_RADIUS, CYLINDER_ROTATION_ANGLE);
         plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
+
+        D3DXMATRIX m = CreateShadowMatrix(POINT_POSITION, PLANE_POSITION, PLANE_NORMAL);
+        pyramid1->SetShadowMatrix(m);
+        pyramid2->SetShadowMatrix(m);
+        cylinder->SetShadowMatrix(m);
+
         std::vector<Model*> models;
+        models.push_back(plane);
         models.push_back(pyramid1);
         models.push_back(pyramid2);
         models.push_back(cylinder);
-        models.push_back(plane);
 
         // SHOWING WINDOW
         ShowWindow(hWnd, nCmdShow);

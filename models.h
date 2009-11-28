@@ -4,7 +4,7 @@
 #include "helper.h"
 
 const unsigned BONES_COUNT = 2;
-const D3DXCOLOR SHADOW_COLOR(0.8f, 0.8f, 1.0f, 0.5f);
+const D3DXCOLOR SHADOW_COLOR(0.1f, 0.1f, 0.2f, 0.5f);
 
 const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 {
@@ -81,7 +81,7 @@ public:
     Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
              const unsigned vcount, const unsigned icount,
              D3DXVECTOR3 position, float time_speed);
-    void Render(IDirect3DDevice9 *device);
+    virtual void Render(IDirect3DDevice9 *device);
     void SetRotation(float angle);
     void SetPosition(D3DXVECTOR3 position);
     static void SetTime(unsigned time);
@@ -106,7 +106,7 @@ public:
     ModelWithShadow(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
              const unsigned vcount, const unsigned icount,
              D3DXVECTOR3 position, float time_speed);
-    void Render(IDirect3DDevice9 *device);
+    virtual void Render(IDirect3DDevice9 *device);
 
     void SetShadowMatrix(D3DXMATRIX m);
 };

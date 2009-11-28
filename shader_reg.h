@@ -7,7 +7,6 @@ enum {
     VIEW_MATRIX_REG = 4,
     ROTATION_MATRIX_REG = 8,
     POSITION_MATRIX_REG = 12,
-    SHADOW_MATRIX_REG = 16,
 
     // model
     TIME_REG = 32,
@@ -17,7 +16,8 @@ enum {
     BONE2_MATRIX_REG = 39,
 
     // stuff
-    SHADOW_COLOR_REG = 48,
+    SHADOW_MATRIX_REG = 48,
+    SHADOW_COLOR_REG = 52,
 
     // light sources
     SCENE_COLOR_AMBIENT_REG = 64,
