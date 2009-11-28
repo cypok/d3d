@@ -1,8 +1,10 @@
 #pragma once
 #include "stdafx.h"
+#include "shader_reg.h"
 #include "helper.h"
 
 const unsigned BONES_COUNT = 2;
+const D3DXCOLOR SHADOW_COLOR(0.8f, 0.8f, 1.0f, 0.5f);
 
 const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 {
@@ -65,20 +67,19 @@ protected:
 
     const unsigned sizeof_vertex;
     const D3DVERTEXELEMENT9 *vertex_element;
-    const TCHAR *shader_file;
 
     float angle_phi;
     D3DXVECTOR3 position;
 
     void InitVIB(IDirect3DDevice9 *device);
-    void InitVDeclAndShader(IDirect3DDevice9 *device);
+    void InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR *shader_file);
 
     virtual void SetShaderConstants(IDirect3DDevice9 *device);
     virtual void Draw(IDirect3DDevice9 *device) = 0;
 
 public:
     Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
-             const TCHAR * shader_file, const unsigned vcount, const unsigned icount,
+             const unsigned vcount, const unsigned icount,
              D3DXVECTOR3 position, float time_speed);
     void Render(IDirect3DDevice9 *device);
     void SetRotation(float angle);
@@ -91,7 +92,26 @@ private:
     Model & operator=(const Model &);
 };
 
-class Pyramid : public Model
+class ModelWithShadow : public Model
+{
+protected:
+    D3DXMATRIX shadow_matrix;
+    IDirect3DVertexShader9 *shadow_vertex_shader;
+
+    void InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR * shader_file, const TCHAR * shadow_shader_file);
+
+    virtual void SetShaderConstants(IDirect3DDevice9 *device);
+
+public:
+    ModelWithShadow(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
+             const unsigned vcount, const unsigned icount,
+             D3DXVECTOR3 position, float time_speed);
+    void Render(IDirect3DDevice9 *device);
+
+    void SetShadowMatrix(D3DXMATRIX m);
+};
+
+class Pyramid : public ModelWithShadow
 {
 protected:
     const float radius;
@@ -102,14 +122,14 @@ protected:
     void Tesselate(unsigned granularity, DWORD color);
 
     virtual void SetShaderConstants(IDirect3DDevice9 *device);
-    void Draw(IDirect3DDevice9 *device);
+    virtual void Draw(IDirect3DDevice9 *device);
 public:
-    Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
+    Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
             D3DXVECTOR3 position, float time_speed,
             unsigned granularity, float radius);
 };
 
-class Cylinder : public Model
+class Cylinder : public ModelWithShadow
 {
 protected:
     const float height;
@@ -120,9 +140,9 @@ protected:
     void Tesselate(unsigned vertical_granularity, unsigned horizontal_granularity, DWORD color);
 
     virtual void SetShaderConstants(IDirect3DDevice9 *device);
-    void Draw(IDirect3DDevice9 *device);
+    virtual void Draw(IDirect3DDevice9 *device);
 public:
-    Cylinder(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
+    Cylinder(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
              D3DXVECTOR3 position, float time_speed,
              unsigned vertical_granularity, unsigned horizontal_granularity,
              float height, float radius, float rotation_angle);

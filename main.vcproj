@@ -173,6 +173,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\cylinder.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\cylinder.vsh"
 				>
 			</File>
@@ -189,7 +193,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\plane.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\plane.vsh"
+				>
+			</File>
+			<File
+				RelativePath=".\pyramid.cpp"
 				>
 			</File>
 			<File

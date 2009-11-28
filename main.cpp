@@ -16,6 +16,7 @@ const RS RENDER_STATES[] = {
 };
 
 const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");
+const TCHAR         PYRAMID_SHADOW_SHADER[] = _T("pyramid.vsh");
 const unsigned      PYRAMID_GRANULARITY     = 300;
 const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 const float         PYRAMID_RADIUS_1        = sqrtf(1.5f);
@@ -25,6 +26,7 @@ const float         PYRAMID_MORPHING_SPEED  = 0.00f;
 const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(200, 40, 40);
 
 const TCHAR         CYLINDER_SHADER[]               = _T("cylinder.vsh");
+const TCHAR         CYLINDER_SHADOW_SHADER[]        = _T("cylinder.vsh");
 const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
 const unsigned      CYLINDER_VERTICAL_GRANULARITY   = 200;
 const unsigned      CYLINDER_HORIZONTAL_GRANULARIRY = 200;
@@ -249,11 +251,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        pyramid1 = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
+        pyramid1 = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
             PYRAMID_GRANULARITY, PYRAMID_RADIUS_1);
-        pyramid2 = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
+        pyramid2 = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
             PYRAMID_GRANULARITY, PYRAMID_RADIUS_2);
-        cylinder = new Cylinder(device, CYLINDER_COLOR, CYLINDER_SHADER, CYLINDER_POSITION, CYLINDER_OSCILLATION_SPEED,
+        cylinder = new Cylinder(device, CYLINDER_COLOR, CYLINDER_SHADER, CYLINDER_SHADOW_SHADER, CYLINDER_POSITION, CYLINDER_OSCILLATION_SPEED,
                                 CYLINDER_VERTICAL_GRANULARITY, CYLINDER_HORIZONTAL_GRANULARIRY,
                                 CYLINDER_HEIGHT, CYLINDER_RADIUS, CYLINDER_ROTATION_ANGLE);
         plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
