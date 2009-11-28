@@ -12,6 +12,11 @@ vs_1_1
 ; c33 : 1 / specular degradation (f)
 ; c34 : sphere radius (R)
 ; _________________________________
+; LIGHT SOURCES
+; > POINT
+;   c68 : position (P)
+;   c71 : attenuation (a, b, c)
+; _________________________________
 ; STUFF
 ; c48 : shadow matrix
 ; c52 : shadow color
@@ -45,9 +50,8 @@ mul     r1.xyz, r1.xyz, r0  ; r1 = v0 * (1 + t*(R/|v0| - 1))
 m4x4    r0, r1, c12         ; r0 = Pyramid_moving( r9 )
 m4x4    r9, r0, c48         ; making shadow ...
 
-rcp     r1, r9.w
-mul     r9.xyz, r9.xyz, r1 
-mov     r9.w, c1
+rcp     r1, r9.w            ; converting...
+mul     r9, r9, r1          ; from (x,y,z,w) to (x/w, y/w, z/w, 1)
 
 m4x4    oPos, r9, c4
 

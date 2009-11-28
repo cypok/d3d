@@ -38,7 +38,7 @@ const float         CYLINDER_OSCILLATION_SPEED      = 0.01f;
 const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/8;
 const DWORD         CYLINDER_COLOR                  = D3DCOLOR_XRGB(100, 200, 100);
 
-const DWORD         PLANE_COLOR         = D3DCOLOR_XRGB(70, 70, 200);
+const DWORD         PLANE_COLOR         = D3DCOLOR_XRGB(170, 170, 170);
 const TCHAR         PLANE_SHADER[]      = _T("plane.vsh");
 const D3DXVECTOR3   PLANE_POSITION      = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
 const D3DXVECTOR3   PLANE_NORMAL        = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
@@ -56,7 +56,7 @@ const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, 0.0f); // z-coord could be variated
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
-const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(0.6f, 0.3f, 0.6f);
+const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(0.05f, 0.0f, 0.1f);
 
 const float SPECULAR_DEGRADATION = 0.1f;
 

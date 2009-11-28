@@ -85,6 +85,7 @@ m4x4    oPos, r9, c4
     add     r6, r6, r2          ; color = diffuse + specular
     
     ; attenuation
+        sub     r5, c68, r9         ; r5 = d = LightSource - Vertex
         dp3     r0, r5, r5          ; r0 = d^2
         rsq     r1, r0              ; r1 = 1/d
         dst     r0, r0, r1          ; r0 = ( 1, d, d^2, 1/d )
