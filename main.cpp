@@ -15,6 +15,7 @@ const RS RENDER_STATES[] = {
     { D3DRS_CULLMODE, D3DCULL_NONE },
     { D3DRS_STENCILENABLE, true },
     { D3DRS_STENCILREF, 1 },
+    { D3DRS_ALPHABLENDENABLE, true },
 };
 
 const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");

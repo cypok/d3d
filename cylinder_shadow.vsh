@@ -46,4 +46,14 @@ mul     r9, r9, r1          ; from (x,y,z,w) to (x/w, y/w, z/w, 1)
 m4x4    oPos, r9, c4
 
 ; set color
-mov     oD0, c52
+        
+        ; attenuation
+        sub     r5, c68, r9         ; r5 = d = LightSource - Vertex
+        dp3     r0, r5, r5          ; r0 = d^2
+        rsq     r1, r0              ; r1 = 1/d
+        dst     r0, r0, r1          ; r0 = ( 1, d, d^2, 1/d )
+        dp3     r0, r0, c71         ; r0 = a + b*d + c*d^2
+        rcp     r0, r0              ; r0 = 1 / (a + b*d + c*d^2)
+                                    ; r0 = attenuation factor
+mul     r10, c52, r0
+mov     oD0, r10

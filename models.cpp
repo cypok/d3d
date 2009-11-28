@@ -154,10 +154,14 @@ void ModelWithShadow::Render(IDirect3DDevice9 *device)
 
     OK( device->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_EQUAL) );
     OK( device->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS) );
+    OK( device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA) );
+    OK( device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA) );
     OK( device->SetVertexShader(shadow_vertex_shader) );
     Draw(device);
     OK( device->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_ALWAYS) );
     OK( device->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL) );
+    OK( device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE) );
+    OK( device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO) );
 
 }
 

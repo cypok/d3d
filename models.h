@@ -4,7 +4,7 @@
 #include "helper.h"
 
 const unsigned BONES_COUNT = 2;
-const D3DXCOLOR SHADOW_COLOR(0.1f, 0.1f, 0.2f, 0.5f);
+const D3DXCOLOR SHADOW_COLOR(0.1f, 0.1f, 0.2f, 0.9f);
 
 const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 {
