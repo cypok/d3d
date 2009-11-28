@@ -18,25 +18,25 @@ const RS RENDER_STATES[] = {
 const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");
 const unsigned      PYRAMID_GRANULARITY     = 300;
 const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-const float         PYRAMID_RADIUS_1        = sqrtf(2.0f);
-const float         PYRAMID_RADIUS_2        = sqrtf(2.0f);
-const float         PYRAMID_ORBIT           = 2.0f;
+const float         PYRAMID_RADIUS_1        = sqrtf(1.5f);
+const float         PYRAMID_RADIUS_2        = sqrtf(1.5f);
+const float         PYRAMID_ORBIT           = 3.0f;
 const float         PYRAMID_MORPHING_SPEED  = 0.00f;
 const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(200, 40, 40);
 
 const TCHAR         CYLINDER_SHADER[]               = _T("cylinder.vsh");
-const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, 0.0f, -4.0f);
+const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
 const unsigned      CYLINDER_VERTICAL_GRANULARITY   = 200;
 const unsigned      CYLINDER_HORIZONTAL_GRANULARIRY = 200;
 const float         CYLINDER_HEIGHT                 = 3.0f;
 const float         CYLINDER_RADIUS                 = 0.5f;
 const float         CYLINDER_OSCILLATION_SPEED      = 0.01f;
-const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/6;
+const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/8;
 const DWORD         CYLINDER_COLOR                  = D3DCOLOR_XRGB(100, 200, 100);
 
 const DWORD         PLANE_COLOR         = D3DCOLOR_XRGB(70, 70, 200);
 const TCHAR         PLANE_SHADER[]      = _T("plane.vsh");
-const D3DXVECTOR3   PLANE_POSITION      = D3DXVECTOR3(0.0f, 0.0f, -4.0f);
+const D3DXVECTOR3   PLANE_POSITION      = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
 const D3DXVECTOR3   PLANE_NORMAL        = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 const unsigned      PLANE_GRANULARITY   = 300;
 const float         PLANE_SIZE          = 20.0f;
@@ -49,69 +49,12 @@ const int WINDOW_HEIGHT = 750;
 // Light sources!
 const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 
-const D3DXVECTOR3   DIRECTIONAL_VECTOR( sinf(D3DX_PI/6)*cosf(D3DX_PI/4),
-                                        sinf(D3DX_PI/6)*sinf(D3DX_PI/4),
-                                       -cosf(D3DX_PI/6));
-const D3DXCOLOR     DIRECTIONAL_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
-const D3DXCOLOR     DIRECTIONAL_COLOR_SPECULAR(0.8f, 0.8f, 0.8f, 0.0f);
-
-const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, -1.5f);
+const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, 1.5f);
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
-const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(1.0f, 0.5f, 1.0f);
-
-const D3DXVECTOR3   SPOT_POSITION(-4.0f, -4.0f, 1.0f);
-const D3DXVECTOR3   SPOT_VECTOR( sinf(D3DX_PI/2.5f)*cosf(D3DX_PI/4),
-                                 sinf(D3DX_PI/2.5f)*sinf(D3DX_PI/4),
-                                 -cosf(D3DX_PI/2.5f));
-const D3DXCOLOR     SPOT_COLOR_DIFFUSE(0.0f, 0.9f, 0.9f, 0.0f);
-const D3DXCOLOR     SPOT_COLOR_SPECULAR(0.0f, 0.9f, 0.8f, 0.0f);
-const D3DXVECTOR3   SPOT_ATTENUATION_FACTOR(1.0f, 1.0f, 1.2f);
-const D3DXVECTOR2   SPOT_RANGE_FACTOR(0.99f, 0.985f);
-
-const float MINIMUM_SPOT_RANGE_DELTA = 0.0000001f;
+const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(0.6f, 0.3f, 0.6f);
 
 const float SPECULAR_DEGRADATION = 0.1f;
-
-// COLORS COUNT SHOULD BE < 16
-const D3DXCOLOR ANISOTROPIC_DIFFUSE_COLORS[] = {
-    D3DXCOLOR( 0.00f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.20f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.40f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.60f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.40f, 0.20f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.20f, 0.40f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.60f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.40f, 0.20f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.20f, 0.40f,   0.00f),
-    D3DXCOLOR( 0.20f, 0.00f, 0.40f,   0.00f),
-    D3DXCOLOR( 0.40f, 0.00f, 0.20f,   0.00f),
-    D3DXCOLOR( 0.60f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.40f, 0.20f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.20f, 0.40f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.60f, 0.00f,   0.00f),
-};
-const unsigned ANISOTROPIC_DIFFUSE_COLORS_COUNT = sizeof(ANISOTROPIC_DIFFUSE_COLORS)/sizeof(ANISOTROPIC_DIFFUSE_COLORS[0]);
-
-// COLORS COUNT SHOULD BE < 16
-const D3DXCOLOR ANISOTROPIC_SPECULAR_COLORS[] = {
-    D3DXCOLOR( 0.00f, 0.00f, 0.00f,   0.00f),
-    D3DXCOLOR( 0.20f, 0.20f, 0.20f,   0.00f),
-    D3DXCOLOR( 0.40f, 0.40f, 0.40f,   0.00f),
-    D3DXCOLOR( 0.60f, 0.60f, 0.60f,   0.00f),
-    D3DXCOLOR( 0.70f, 0.70f, 0.70f,   0.00f),
-    D3DXCOLOR( 0.80f, 0.80f, 0.80f,   0.00f),
-    D3DXCOLOR( 0.90f, 0.90f, 0.90f,   0.00f),
-    D3DXCOLOR( 1.00f, 1.00f, 1.00f,   0.00f),
-    D3DXCOLOR( 0.90f, 0.90f, 0.90f,   0.00f),
-    D3DXCOLOR( 0.80f, 0.80f, 0.80f,   0.00f),
-    D3DXCOLOR( 0.70f, 0.70f, 0.70f,   0.00f),
-    D3DXCOLOR( 0.60f, 0.60f, 0.60f,   0.00f),
-    D3DXCOLOR( 0.40f, 0.40f, 0.40f,   0.00f),
-    D3DXCOLOR( 0.20f, 0.20f, 0.20f,   0.00f),
-    D3DXCOLOR( 0.00f, 0.00f, 0.00f,   0.00f),
-};
-const unsigned ANISOTROPIC_SPECULAR_COLORS_COUNT = sizeof(ANISOTROPIC_SPECULAR_COLORS)/sizeof(ANISOTROPIC_SPECULAR_COLORS[0]);
 
 const unsigned RHO = 0;
 const unsigned THETA = 1;
@@ -240,39 +183,11 @@ void SetLights(IDirect3DDevice9 *device)
 
     OK( device->SetVertexShaderConstantF(SCENE_COLOR_AMBIENT_REG, SCENE_COLOR_AMBIENT, 1) );
 
-    OK( device->SetVertexShaderConstantF(DIRECTIONAL_VECTOR_REG, DIRECTIONAL_VECTOR, 1) );
-    OK( device->SetVertexShaderConstantF(DIRECTIONAL_COLOR_DIFFUSE_REG, DIRECTIONAL_COLOR_DIFFUSE, 1) );
-    OK( device->SetVertexShaderConstantF(DIRECTIONAL_COLOR_SPECULAR_REG, DIRECTIONAL_COLOR_SPECULAR, 1) );
-
     OK( device->SetVertexShaderConstantF(POINT_POSITION_REG, POINT_POSITION, 1) );
     OK( device->SetVertexShaderConstantF(POINT_COLOR_DIFFUSE_REG, POINT_COLOR_DIFFUSE, 1) );
     OK( device->SetVertexShaderConstantF(POINT_COLOR_SPECULAR_REG, POINT_COLOR_SPECULAR, 1) );
     OK( device->SetVertexShaderConstantF(POINT_ATTENUATION_FACTOR_REG, POINT_ATTENUATION_FACTOR, 1) );
 
-    OK( device->SetVertexShaderConstantF(SPOT_POSITION_REG, SPOT_POSITION, 1) );
-    OK( device->SetVertexShaderConstantF(SPOT_VECTOR_REG, SPOT_VECTOR, 1) );
-    OK( device->SetVertexShaderConstantF(SPOT_COLOR_DIFFUSE_REG, SPOT_COLOR_DIFFUSE, 1) );
-    OK( device->SetVertexShaderConstantF(SPOT_COLOR_SPECULAR_REG, SPOT_COLOR_SPECULAR, 1) );
-    OK( device->SetVertexShaderConstantF(SPOT_ATTENUATION_FACTOR_REG, SPOT_ATTENUATION_FACTOR, 1) );
-    v.x = 1/(SPOT_RANGE_FACTOR.x-SPOT_RANGE_FACTOR.y);
-    if (v.x > 1/MINIMUM_SPOT_RANGE_DELTA)
-        v.x = 1/MINIMUM_SPOT_RANGE_DELTA;
-    v.y = SPOT_RANGE_FACTOR.y*v.x;
-    v.z = v.w = 0;
-    OK( device->SetVertexShaderConstantF(SPOT_RANGE_FACTOR_REG, v, 1) );
-
-
-    v.x = v.y = v.z = v.w = -1 + static_cast<float>(ANISOTROPIC_DIFFUSE_COLORS_COUNT);
-    OK( device->SetVertexShaderConstantF(ANISOTROPIC_DIFFUSE_COLORS_REG, v, 1) );
-    OK( device->SetVertexShaderConstantF(   ANISOTROPIC_DIFFUSE_COLORS_REG+1,
-                                            (float *)(ANISOTROPIC_DIFFUSE_COLORS),
-                                            ANISOTROPIC_DIFFUSE_COLORS_COUNT) );
-
-    v.x = v.y = v.z = v.w = -1 + static_cast<float>(ANISOTROPIC_SPECULAR_COLORS_COUNT);
-    OK( device->SetVertexShaderConstantF(ANISOTROPIC_SPECULAR_COLORS_REG, v, 1) );
-    OK( device->SetVertexShaderConstantF(   ANISOTROPIC_SPECULAR_COLORS_REG+1,
-                                            (float *)(ANISOTROPIC_SPECULAR_COLORS),
-                                            ANISOTROPIC_SPECULAR_COLORS_COUNT) );
 }
 
 void Render(IDirect3DDevice9 *device, std::vector<Model*> models)
