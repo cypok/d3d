@@ -152,7 +152,16 @@ void ModelWithShadow::Render(IDirect3DDevice9 *device)
     OK( device->SetVertexShader(vertex_shader) );
     Draw(device);
 
+    OK( device->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_EQUAL) );
+    OK( device->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS) );
     OK( device->SetVertexShader(shadow_vertex_shader) );
     Draw(device);
+    OK( device->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_ALWAYS) );
+    OK( device->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL) );
 
+}
+
+ModelWithShadow::~ModelWithShadow()
+{
+    ReleaseInterface(shadow_vertex_shader);
 }

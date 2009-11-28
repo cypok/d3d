@@ -85,7 +85,7 @@ public:
     void SetRotation(float angle);
     void SetPosition(D3DXVECTOR3 position);
     static void SetTime(unsigned time);
-    virtual ~Model();
+    ~Model();
 private:
     // no copying
     Model(const Model &);
@@ -109,6 +109,7 @@ public:
     virtual void Render(IDirect3DDevice9 *device);
 
     void SetShadowMatrix(D3DXMATRIX m);
+    ~ModelWithShadow();
 };
 
 class Pyramid : public ModelWithShadow

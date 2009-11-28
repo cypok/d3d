@@ -13,6 +13,8 @@ const RS RENDER_STATES[] = {
     { D3DRS_FILLMODE, D3DFILL_SOLID },
     //{ D3DRS_FILLMODE, D3DFILL_WIREFRAME },
     { D3DRS_CULLMODE, D3DCULL_NONE },
+    { D3DRS_STENCILENABLE, true },
+    { D3DRS_STENCILREF, 1 },
 };
 
 const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");
@@ -119,7 +121,7 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, IDirect3DDevice9 **device)
     params.BackBufferFormat = D3DFMT_UNKNOWN;
     params.hDeviceWindow = hWnd;
     params.EnableAutoDepthStencil = TRUE;
-    params.AutoDepthStencilFormat = D3DFMT_D16;
+    params.AutoDepthStencilFormat = D3DFMT_D24S8;
 
     OK( (*d3d)->CreateDevice(D3DADAPTER_DEFAULT,
                                     D3DDEVTYPE_HAL,
@@ -222,11 +224,15 @@ D3DXMATRIX CreateShadowMatrix(D3DXVECTOR3 light_pos, D3DXVECTOR3 plane_pos, D3DX
     return M1-M2+M3+M4;
 }
 
-void Render(IDirect3DDevice9 *device, std::vector<Model*> models)
+void Render(IDirect3DDevice9 *device, Model * plane, std::vector<Model*> models)
 {
     OK( device->BeginScene() );
-    OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, GRAY, 1.0f, 0 ) );
+    OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, GRAY, 1.0f, 0 ) );
+    
+    OK( device->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_REPLACE) );
+    plane->Render(device);
 
+    OK( device->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_ZERO) );
     for(unsigned i = 0; i < models.size(); ++i)
         models[i]->Render(device);
 
@@ -296,7 +302,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         cylinder->SetShadowMatrix(m);
 
         std::vector<Model*> models;
-        models.push_back(plane);
         models.push_back(pyramid1);
         models.push_back(pyramid2);
         models.push_back(cylinder);
@@ -338,7 +343,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                 pyramid2->SetPosition(PYRAMID_POSITION + D3DXVECTOR3(-PYRAMID_ORBIT*cosf(angle),
                                                                      -PYRAMID_ORBIT*sinf(angle),
                                                                      0));
-                Render(device, models);
+                Render(device, plane, models);
             }
         }
     }
