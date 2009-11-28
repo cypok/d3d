@@ -53,7 +53,7 @@ const int WINDOW_HEIGHT = 750;
 // Light sources!
 const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 
-const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, 1.5f);
+const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, 0.0f); // z-coord could be variated
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
 const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(0.6f, 0.3f, 0.6f);
@@ -66,8 +66,9 @@ const unsigned PHI = 2;
 const unsigned PYRAMID_PHI = 3;
 const unsigned PYRAMID_ORBIT_PHI = 4;
 const unsigned CYLINDER_PHI = 5;
+const unsigned LIGHT_POS = 6;
 
-const unsigned TIME_VALUE_INDEX = 24; // in window class memory
+const unsigned TIME_VALUE_INDEX = 28; // in window class memory
 
 struct Coord
 {
@@ -85,6 +86,7 @@ const Coord COORDS[] = {
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID ORBIT PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     D3DX_PI/4 },      // CYLINDER PHI
+    { -1.45f,       1e37f,          0.25f,          1.5f      },      // LIGHT POSITION
 };
 
 
@@ -179,7 +181,7 @@ void SetViewMatrix(IDirect3DDevice9 *device, float rho, float tetha, float phi)
     OK( device->SetVertexShaderConstantF(VIEW_MATRIX_REG, projMatrix * viewMatrix, WORLD_DIMENSION + 1) );
 }
 
-void SetLights(IDirect3DDevice9 *device)
+void SetLights(IDirect3DDevice9 *device, float light_pos)
 {
     D3DXVECTOR4 v;
     v.x = v.y = v.z = v.w = 1 / SPECULAR_DEGRADATION;
@@ -187,7 +189,7 @@ void SetLights(IDirect3DDevice9 *device)
 
     OK( device->SetVertexShaderConstantF(SCENE_COLOR_AMBIENT_REG, SCENE_COLOR_AMBIENT, 1) );
 
-    OK( device->SetVertexShaderConstantF(POINT_POSITION_REG, POINT_POSITION, 1) );
+    OK( device->SetVertexShaderConstantF(POINT_POSITION_REG, POINT_POSITION+D3DXVECTOR3(0, 0, light_pos), 1) );
     OK( device->SetVertexShaderConstantF(POINT_COLOR_DIFFUSE_REG, POINT_COLOR_DIFFUSE, 1) );
     OK( device->SetVertexShaderConstantF(POINT_COLOR_SPECULAR_REG, POINT_COLOR_SPECULAR, 1) );
     OK( device->SetVertexShaderConstantF(POINT_ATTENUATION_FACTOR_REG, POINT_ATTENUATION_FACTOR, 1) );
@@ -262,7 +264,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         wcex.cbSize         = sizeof(WNDCLASSEX);
         wcex.style          = CS_HREDRAW | CS_VREDRAW;
         wcex.lpfnWndProc    = WndProc;
-        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG)+sizeof(float)*3; // here would be stored view coordinates
+        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG)+sizeof(float)*4; // here would be stored view coordinates
         wcex.cbWndExtra     = 0;
         wcex.hInstance      = hInstance;
         wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
@@ -284,6 +286,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         SetClassLong(hWnd, TIME_VALUE_INDEX, 0);
         SetClassFloat(hWnd, PYRAMID_PHI, COORDS[PYRAMID_PHI].initial);
         SetClassFloat(hWnd, PYRAMID_ORBIT_PHI, COORDS[PYRAMID_ORBIT_PHI].initial);
+        SetClassFloat(hWnd, CYLINDER_PHI, COORDS[CYLINDER_PHI].initial);
+        SetClassFloat(hWnd, LIGHT_POS, COORDS[LIGHT_POS].initial);
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
@@ -295,11 +299,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                                 CYLINDER_VERTICAL_GRANULARITY, CYLINDER_HORIZONTAL_GRANULARIRY,
                                 CYLINDER_HEIGHT, CYLINDER_RADIUS, CYLINDER_ROTATION_ANGLE);
         plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
-
-        D3DXMATRIX m = CreateShadowMatrix(POINT_POSITION, PLANE_POSITION, PLANE_NORMAL);
-        pyramid1->SetShadowMatrix(m);
-        pyramid2->SetShadowMatrix(m);
-        cylinder->SetShadowMatrix(m);
 
         std::vector<Model*> models;
         models.push_back(pyramid1);
@@ -313,8 +312,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         // CREATE TIMER FOR ANIMATION
         SetTimer(hWnd, 0, TIMER_FREQ, NULL);
 
-        SetLights(device);
-
         // MAIN MESSAGE LOOP:
         MSG msg = {0};
         while (msg.message != WM_QUIT)
@@ -327,11 +324,16 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             else
             {
                 Model::SetTime(GetTime(hWnd));
+                SetLights(device, GetClassFloat(hWnd, LIGHT_POS));
                 SetViewMatrix(device,
                     GetClassFloat(hWnd, RHO),
                     GetClassFloat(hWnd, THETA),
                     GetClassFloat(hWnd, PHI)
                 );
+                D3DXMATRIX m = CreateShadowMatrix(POINT_POSITION+D3DXVECTOR3(0,0,GetClassFloat(hWnd, LIGHT_POS)), PLANE_POSITION, PLANE_NORMAL);
+                pyramid1->SetShadowMatrix(m);
+                pyramid2->SetShadowMatrix(m);
+                cylinder->SetShadowMatrix(m);
 
                 pyramid1->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
                 pyramid2->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
@@ -398,6 +400,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         case 'Z': IncCoord(hWnd, CYLINDER_PHI); break;
         case 'C': DecCoord(hWnd, CYLINDER_PHI); break;
+
+        case 'W': IncCoord(hWnd, LIGHT_POS); break;
+        case 'S': DecCoord(hWnd, LIGHT_POS); break;
         }
         break;
 
