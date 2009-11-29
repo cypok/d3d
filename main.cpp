@@ -44,7 +44,7 @@ const TCHAR         PLANE_SHADER[]      = _T("plane.vsh");
 const D3DXVECTOR3   PLANE_POSITION      = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
 const D3DXVECTOR3   PLANE_NORMAL        = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 const unsigned      PLANE_GRANULARITY   = 300;
-const float         PLANE_SIZE          = 20.0f;
+const float         PLANE_SIZE          = 50.0f;
 
 const unsigned TIMER_FREQ = 10;
 
@@ -91,7 +91,7 @@ const Coord COORDS[] = {
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID ORBIT PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     D3DX_PI/4 },      // CYLINDER PHI
-    { -1.0f,       1e37f,          0.25f,          1.5f      },      // LIGHT POSITION
+    { -1.80f,        1e37f,          0.05f,          1.5f      },      // LIGHT POSITION
 };
 
 
@@ -204,8 +204,8 @@ void SetLights(IDirect3DDevice9 *device, float light_pos)
 D3DXMATRIX CreateShadowMatrix(D3DXVECTOR3 light_pos, D3DXVECTOR3 plane_pos, D3DXVECTOR3 plane_norm)
 {
     D3DXVECTOR3 &l = light_pos;
-    float d = D3DXVec3Dot(&plane_pos, &plane_norm);
     D3DXVECTOR3 &n = plane_norm;
+    float d = D3DXVec3Dot(&plane_pos, &n);
 
     D3DXMATRIX M1( d, 0, 0, -d*l.x,
                    0, d, 0, -d*l.y,
@@ -228,7 +228,7 @@ D3DXMATRIX CreateShadowMatrix(D3DXVECTOR3 light_pos, D3DXVECTOR3 plane_pos, D3DX
                    0,   0,   0,  0,
                    n.x, n.y, n.z, -pn );
 
-    return M1-M2+M3+M4;
+    return -(M1-M2+M3+M4);
 }
 
 void Render(IDirect3DDevice9 *device, Model * plane, Model * bulb, std::vector<Model*> models)

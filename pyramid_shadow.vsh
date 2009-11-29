@@ -50,10 +50,10 @@ mul     r1.xyz, r1.xyz, r0  ; r1 = v0 * (1 + t*(R/|v0| - 1))
 m4x4    r8, r1, c12         ; r0 = Pyramid_moving( r9 )
 m4x4    r9, r8, c48         ; making shadow ...
 
+m4x4    oPos, r9, c4
+
 rcp     r1, r9.w            ; converting...
 mul     r9, r9, r1          ; from (x,y,z,w) to (x/w, y/w, z/w, 1)
-
-m4x4    oPos, r9, c4
 
 ; set color
         
@@ -71,11 +71,7 @@ m4x4    oPos, r9, c4
         dp3     r0, r0, c71         ; r0 = a + b*d + c*d^2
         rcp     r0, r0              ; r0 = 1 / (a + b*d + c*d^2)
                                     ; r0 = attenuation factor
-                                    
-        ; cut "inversed" shadows
-        sge     r1, r2, r3          ; r2 should be >= r3
         
 mov     r10, c52
 mul     r10.a, r10.a, r0
-mul     r10.a, r10.a, r1
 mov     oD0, r10
