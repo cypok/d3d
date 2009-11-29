@@ -63,7 +63,7 @@ Model::~Model()
     ReleaseInterface(vertex_declaration);
 }
 
-void Model::Render(IDirect3DDevice9 *device)
+void Model::Render(IDirect3DDevice9 *device, bool)
 {
     SetShaderConstants(device);
     OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof_vertex) );
@@ -142,7 +142,7 @@ void ModelWithShadow::InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR *
     ReleaseInterface(code);
 }
 
-void ModelWithShadow::Render(IDirect3DDevice9 *device)
+void ModelWithShadow::Render(IDirect3DDevice9 *device, bool force_no_shadow)
 {
     SetShaderConstants(device);
     OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof_vertex) );
@@ -152,16 +152,19 @@ void ModelWithShadow::Render(IDirect3DDevice9 *device)
     OK( device->SetVertexShader(vertex_shader) );
     Draw(device);
 
-    OK( device->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_EQUAL) );
-    OK( device->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS) );
-    OK( device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA) );
-    OK( device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA) );
-    OK( device->SetVertexShader(shadow_vertex_shader) );
-    Draw(device);
-    OK( device->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_ALWAYS) );
-    OK( device->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL) );
-    OK( device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE) );
-    OK( device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO) );
+    if(!force_no_shadow)
+    {
+        OK( device->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_EQUAL) );
+        OK( device->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS) );
+        OK( device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA) );
+        OK( device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA) );
+        OK( device->SetVertexShader(shadow_vertex_shader) );
+        Draw(device);
+        OK( device->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_ALWAYS) );
+        OK( device->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL) );
+        OK( device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE) );
+        OK( device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO) );
+    }
 
 }
 

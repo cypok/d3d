@@ -30,7 +30,7 @@ const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(200, 40, 40);
 
 const TCHAR         CYLINDER_SHADER[]               = _T("cylinder.vsh");
 const TCHAR         CYLINDER_SHADOW_SHADER[]        = _T("cylinder_shadow.vsh");
-const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
+const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, -3.0f, -2.0f);
 const unsigned      CYLINDER_VERTICAL_GRANULARITY   = 200;
 const unsigned      CYLINDER_HORIZONTAL_GRANULARIRY = 200;
 const float         CYLINDER_HEIGHT                 = 3.0f;
@@ -54,10 +54,14 @@ const int WINDOW_HEIGHT = 750;
 // Light sources!
 const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 
-const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, 0.0f); // z-coord could be variated
+const D3DXVECTOR3   POINT_POSITION(0.5f, -1.5f, 0.0f); // z-coord could be variated
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
 const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(0.5f, 0.0f, 0.1f);
+
+const TCHAR         BULB_SHADER[] = _T("bulb.vsh");
+const unsigned      BULB_GRANULARITY = 5;
+const float         BULB_RADIUS = 0.1f;
 
 const float SPECULAR_DEGRADATION = 0.1f;
 
@@ -227,11 +231,13 @@ D3DXMATRIX CreateShadowMatrix(D3DXVECTOR3 light_pos, D3DXVECTOR3 plane_pos, D3DX
     return M1-M2+M3+M4;
 }
 
-void Render(IDirect3DDevice9 *device, Model * plane, std::vector<Model*> models)
+void Render(IDirect3DDevice9 *device, Model * plane, Model * bulb, std::vector<Model*> models)
 {
     OK( device->BeginScene() );
     OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, GRAY, 1.0f, 0 ) );
     
+    bulb->Render(device, true);
+
     OK( device->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_REPLACE) );
     plane->Render(device);
 
@@ -249,6 +255,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     IDirect3DDevice9 *device = NULL;
     Pyramid *pyramid1 = NULL;
     Pyramid *pyramid2 = NULL;
+    Pyramid *bulb = NULL;
     Cylinder *cylinder = NULL;
     Plane *plane = NULL;
 
@@ -296,6 +303,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             PYRAMID_GRANULARITY, PYRAMID_RADIUS_1);
         pyramid2 = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
             PYRAMID_GRANULARITY, PYRAMID_RADIUS_2);
+        bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, BULB_SHADER, POINT_POSITION, 0,
+            BULB_GRANULARITY, BULB_RADIUS);
         cylinder = new Cylinder(device, CYLINDER_COLOR, CYLINDER_SHADER, CYLINDER_SHADOW_SHADER, CYLINDER_POSITION, CYLINDER_OSCILLATION_SPEED,
                                 CYLINDER_VERTICAL_GRANULARITY, CYLINDER_HORIZONTAL_GRANULARIRY,
                                 CYLINDER_HEIGHT, CYLINDER_RADIUS, CYLINDER_ROTATION_ANGLE);
@@ -346,7 +355,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                 pyramid2->SetPosition(PYRAMID_POSITION + D3DXVECTOR3(-PYRAMID_ORBIT*cosf(angle),
                                                                      -PYRAMID_ORBIT*sinf(angle),
                                                                      0));
-                Render(device, plane, models);
+                bulb->SetPosition(POINT_POSITION+D3DXVECTOR3(0,0,GetClassFloat(hWnd, LIGHT_POS)));
+                Render(device, plane, bulb, models);
             }
         }
     }
@@ -363,6 +373,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     delete pyramid2;
     delete cylinder;
     delete plane;
+    delete bulb;
 
     return (int) msg.wParam;
 }

@@ -4,7 +4,7 @@
 #include "helper.h"
 
 const unsigned BONES_COUNT = 2;
-const D3DXCOLOR SHADOW_COLOR(0.1f, 0.1f, 0.2f, 0.9f);
+const D3DXCOLOR SHADOW_COLOR(0.0f, 0.0f, 0.05f, 1.0f);
 
 const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 {
@@ -81,11 +81,11 @@ public:
     Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
              const unsigned vcount, const unsigned icount,
              D3DXVECTOR3 position, float time_speed);
-    virtual void Render(IDirect3DDevice9 *device);
+    virtual void Render(IDirect3DDevice9 *device, bool extra = false);
     void SetRotation(float angle);
     void SetPosition(D3DXVECTOR3 position);
     static void SetTime(unsigned time);
-    ~Model();
+    virtual ~Model();
 private:
     // no copying
     Model(const Model &);
@@ -106,10 +106,10 @@ public:
     ModelWithShadow(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
              const unsigned vcount, const unsigned icount,
              D3DXVECTOR3 position, float time_speed);
-    virtual void Render(IDirect3DDevice9 *device);
+    virtual void Render(IDirect3DDevice9 *device, bool force_no_shadow = false);
 
     void SetShadowMatrix(D3DXMATRIX m);
-    ~ModelWithShadow();
+    virtual ~ModelWithShadow();
 };
 
 class Pyramid : public ModelWithShadow
