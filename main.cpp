@@ -57,7 +57,7 @@ const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 const D3DXVECTOR3   POINT_POSITION(2.0f, -3.0f, 0.0f); // z-coord could be variated
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
-const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(0.05f, 0.0f, 0.1f);
+const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(0.5f, 0.0f, 0.1f);
 
 const float SPECULAR_DEGRADATION = 0.1f;
 
@@ -87,7 +87,7 @@ const Coord COORDS[] = {
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID ORBIT PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     D3DX_PI/4 },      // CYLINDER PHI
-    { -1.45f,       1e37f,          0.25f,          1.5f      },      // LIGHT POSITION
+    { -1.0f,       1e37f,          0.25f,          1.5f      },      // LIGHT POSITION
 };
 
 
