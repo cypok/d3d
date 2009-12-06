@@ -22,22 +22,10 @@ const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");
 const TCHAR         PYRAMID_SHADOW_SHADER[] = _T("pyramid_shadow.vsh");
 const unsigned      PYRAMID_GRANULARITY     = 300;
 const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, -0.5f);
-const float         PYRAMID_RADIUS_1        = sqrtf(1.5f);
-const float         PYRAMID_RADIUS_2        = sqrtf(1.5f);
-const float         PYRAMID_ORBIT           = 3.0f;
-const float         PYRAMID_MORPHING_SPEED  = 0.05f;
-const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(200, 40, 40);
-
-const TCHAR         CYLINDER_SHADER[]               = _T("cylinder.vsh");
-const TCHAR         CYLINDER_SHADOW_SHADER[]        = _T("cylinder_shadow.vsh");
-const D3DXVECTOR3   CYLINDER_POSITION               = D3DXVECTOR3(0.0f, -3.0f, -2.0f);
-const unsigned      CYLINDER_VERTICAL_GRANULARITY   = 200;
-const unsigned      CYLINDER_HORIZONTAL_GRANULARIRY = 200;
-const float         CYLINDER_HEIGHT                 = 3.0f;
-const float         CYLINDER_RADIUS                 = 0.5f;
-const float         CYLINDER_OSCILLATION_SPEED      = 0.01f;
-const float         CYLINDER_ROTATION_ANGLE         = D3DX_PI/8;
-const DWORD         CYLINDER_COLOR                  = D3DCOLOR_XRGB(100, 200, 100);
+const float         PYRAMID_RADIUS          = sqrtf(1.5f);
+const float         PYRAMID_ORBIT           = 1.5f;
+const float         PYRAMID_MORPHING_SPEED  = 0.00f;
+const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(40, 200, 200);
 
 const DWORD         PLANE_COLOR         = D3DCOLOR_XRGB(170, 170, 170);
 const TCHAR         PLANE_SHADER[]      = _T("plane.vsh");
@@ -70,10 +58,9 @@ const unsigned THETA = 1;
 const unsigned PHI = 2;
 const unsigned PYRAMID_PHI = 3;
 const unsigned PYRAMID_ORBIT_PHI = 4;
-const unsigned CYLINDER_PHI = 5;
-const unsigned LIGHT_POS = 6;
+const unsigned LIGHT_POS = 5;
 
-const unsigned TIME_VALUE_INDEX = 28; // in window class memory
+const unsigned TIME_VALUE_INDEX = 24; // in window class memory
 
 struct Coord
 {
@@ -85,12 +72,11 @@ struct Coord
 
 const Coord COORDS[] = {
     /* MIN */       /* MAX */       /* DELTA */     /* INITIAL */
-    { 3.0f,         20.0f,          0.25f,          7.0f      },     // RHO
+    { 3.0f,         20.0f,          0.25f,          4.0f      },     // RHO
     { D3DX_PI/24,   D3DX_PI*23/24,  D3DX_PI/24,     D3DX_PI*11/24 }, // THETA
     { -1e37f,       1e37f,          D3DX_PI/24,     D3DX_PI*3/2 },     // PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID ORBIT PHI
-    { -1e37f,       1e37f,          D3DX_PI/36,     D3DX_PI/4 },      // CYLINDER PHI
     { -1.80f,        1e37f,          0.05f,          1.5f      },      // LIGHT POSITION
 };
 
@@ -253,10 +239,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 {    
     IDirect3D9 *d3d = NULL;
     IDirect3DDevice9 *device = NULL;
-    Pyramid *pyramid1 = NULL;
-    Pyramid *pyramid2 = NULL;
+    Pyramid *pyramid = NULL;
     Pyramid *bulb = NULL;
-    Cylinder *cylinder = NULL;
     Plane *plane = NULL;
 
     MSG msg = {0};
@@ -272,7 +256,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         wcex.cbSize         = sizeof(WNDCLASSEX);
         wcex.style          = CS_HREDRAW | CS_VREDRAW;
         wcex.lpfnWndProc    = WndProc;
-        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG)+sizeof(float)*4; // here would be stored view coordinates
+        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG)+sizeof(float)*3; // here would be stored view coordinates
         wcex.cbWndExtra     = 0;
         wcex.hInstance      = hInstance;
         wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
@@ -294,26 +278,18 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         SetClassLong(hWnd, TIME_VALUE_INDEX, 0);
         SetClassFloat(hWnd, PYRAMID_PHI, COORDS[PYRAMID_PHI].initial);
         SetClassFloat(hWnd, PYRAMID_ORBIT_PHI, COORDS[PYRAMID_ORBIT_PHI].initial);
-        SetClassFloat(hWnd, CYLINDER_PHI, COORDS[CYLINDER_PHI].initial);
         SetClassFloat(hWnd, LIGHT_POS, COORDS[LIGHT_POS].initial);
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        pyramid1 = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
-            PYRAMID_GRANULARITY, PYRAMID_RADIUS_1);
-        pyramid2 = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
-            PYRAMID_GRANULARITY, PYRAMID_RADIUS_2);
+        pyramid = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
+            PYRAMID_GRANULARITY, PYRAMID_RADIUS);
         bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, BULB_SHADER, POINT_POSITION, 0,
             BULB_GRANULARITY, BULB_RADIUS);
-        cylinder = new Cylinder(device, CYLINDER_COLOR, CYLINDER_SHADER, CYLINDER_SHADOW_SHADER, CYLINDER_POSITION, CYLINDER_OSCILLATION_SPEED,
-                                CYLINDER_VERTICAL_GRANULARITY, CYLINDER_HORIZONTAL_GRANULARIRY,
-                                CYLINDER_HEIGHT, CYLINDER_RADIUS, CYLINDER_ROTATION_ANGLE);
         plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
 
         std::vector<Model*> models;
-        models.push_back(pyramid1);
-        models.push_back(pyramid2);
-        models.push_back(cylinder);
+        models.push_back(pyramid);
 
         // SHOWING WINDOW
         ShowWindow(hWnd, nCmdShow);
@@ -341,19 +317,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                     GetClassFloat(hWnd, PHI)
                 );
                 D3DXMATRIX m = CreateShadowMatrix(POINT_POSITION+D3DXVECTOR3(0,0,GetClassFloat(hWnd, LIGHT_POS)), PLANE_POSITION, PLANE_NORMAL);
-                pyramid1->SetShadowMatrix(m);
-                pyramid2->SetShadowMatrix(m);
-                cylinder->SetShadowMatrix(m);
+                pyramid->SetShadowMatrix(m);
 
-                pyramid1->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
-                pyramid2->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
-                cylinder->SetRotation(GetClassFloat(hWnd, CYLINDER_PHI));
+                pyramid->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
                 float angle = GetClassFloat(hWnd, PYRAMID_ORBIT_PHI);
-                pyramid1->SetPosition(PYRAMID_POSITION + D3DXVECTOR3(PYRAMID_ORBIT*cosf(angle),
+                pyramid->SetPosition(PYRAMID_POSITION + D3DXVECTOR3(PYRAMID_ORBIT*cosf(angle),
                                                                      PYRAMID_ORBIT*sinf(angle),
-                                                                     0));
-                pyramid2->SetPosition(PYRAMID_POSITION + D3DXVECTOR3(-PYRAMID_ORBIT*cosf(angle),
-                                                                     -PYRAMID_ORBIT*sinf(angle),
                                                                      0));
                 bulb->SetPosition(POINT_POSITION+D3DXVECTOR3(0,0,GetClassFloat(hWnd, LIGHT_POS)));
                 Render(device, plane, bulb, models);
@@ -369,9 +338,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     ReleaseInterface(d3d);
     ReleaseInterface(device);
 
-    delete pyramid1;
-    delete pyramid2;
-    delete cylinder;
+    delete pyramid;
     delete plane;
     delete bulb;
 
@@ -409,9 +376,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         case 'Q': IncCoord(hWnd, PYRAMID_ORBIT_PHI); break;
         case 'E': DecCoord(hWnd, PYRAMID_ORBIT_PHI); break;
-
-        case 'Z': IncCoord(hWnd, CYLINDER_PHI); break;
-        case 'C': DecCoord(hWnd, CYLINDER_PHI); break;
 
         case 'W': IncCoord(hWnd, LIGHT_POS); break;
         case 'S': DecCoord(hWnd, LIGHT_POS); break;
