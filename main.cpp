@@ -27,6 +27,7 @@ const float         PYRAMID_ORBIT           = 1.5f;
 const float         PYRAMID_MORPHING_SPEED  = 0.00f;
 const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(40, 200, 200);
 const TCHAR         PYRAMID_TEXTURE[]       = _T("earth.bmp");
+const TCHAR         PYRAMID_PIXEL_SHADER[]  = _T("pyramid.psh");
 
 const DWORD         PLANE_COLOR             = D3DCOLOR_XRGB(170, 170, 170);
 const TCHAR         PLANE_SHADER[]          = _T("plane.vsh");
@@ -283,11 +284,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        pyramid = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_TEXTURE, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
-            PYRAMID_GRANULARITY, PYRAMID_RADIUS);
-        bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, NULL, NULL, POINT_POSITION, 0,
-            BULB_GRANULARITY, BULB_RADIUS);
-        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, NULL, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
+        pyramid = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_TEXTURE, PYRAMID_PIXEL_SHADER,
+            PYRAMID_POSITION, PYRAMID_MORPHING_SPEED, PYRAMID_GRANULARITY, PYRAMID_RADIUS);
+        bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, NULL, NULL, NULL, 
+            POINT_POSITION, 0, BULB_GRANULARITY, BULB_RADIUS);
+        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, NULL, NULL, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
 
         std::vector<Model*> models;
         models.push_back(pyramid);

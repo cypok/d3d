@@ -37,6 +37,7 @@ protected:
     IDirect3DVertexShader9 *vertex_shader;
     IDirect3DVertexDeclaration9 *vertex_declaration;
     IDirect3DTexture9 *texture;
+    IDirect3DPixelShader9 *pixel_shader;
 
     void *vb;
     DWORD *ib;
@@ -54,7 +55,7 @@ protected:
 
     void InitVIB(IDirect3DDevice9 *device);
     void InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR *shader_file);
-    void InitTexture(IDirect3DDevice9 *device, const TCHAR *texture_file);
+    void InitTextureAndPixelShader(IDirect3DDevice9 *device, const TCHAR *texture_file, const TCHAR *pixel_shader);
 
     virtual void SetShaderConstants(IDirect3DDevice9 *device);
     virtual void Draw(IDirect3DDevice9 *device) = 0;
@@ -108,7 +109,7 @@ protected:
     virtual void Draw(IDirect3DDevice9 *device);
 public:
     Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
-            const TCHAR * texture_file,
+            const TCHAR * texture_file, const TCHAR * pixel_shader_file,
             D3DXVECTOR3 position, float time_speed,
             unsigned granularity, float radius);
 };
@@ -125,7 +126,7 @@ protected:
 
 public:
     Plane(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
-          const TCHAR * texture_file,
+          const TCHAR * texture_file, const TCHAR * pixel_shader_file,
           D3DXVECTOR3 position, D3DXVECTOR3 normal,
           unsigned granularity, float size);
 };

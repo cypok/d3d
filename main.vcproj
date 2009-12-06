@@ -201,6 +201,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pyramid.psh"
+				>
+			</File>
+			<File
 				RelativePath=".\pyramid.vsh"
 				>
 			</File>

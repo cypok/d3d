@@ -12,7 +12,7 @@ const D3DXVECTOR3 INITIAL_PYRAMID[] = {       // it is generated for radius = sq
 const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
 
 Pyramid::Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
-                 const TCHAR *texture_file,
+                 const TCHAR *texture_file, const TCHAR *pixel_shader_file,
                  D3DXVECTOR3 position, float time_speed,
                  unsigned granularity, float radius) :
         ModelWithShadow(sizeof(Vertex), VERTEX_ELEMENT,
@@ -25,7 +25,7 @@ Pyramid::Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file
 
     InitVIB(device);
     InitVDeclAndShader(device, shader_file, shadow_shader_file);
-    InitTexture(device, texture_file);
+    InitTextureAndPixelShader(device, texture_file, pixel_shader_file);
 }
 
 void Pyramid::SetShaderConstants(IDirect3DDevice9 *device)
