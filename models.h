@@ -34,20 +34,6 @@ const D3DVERTEXELEMENT9 VERTEX_WITH_WEIGHTS_ELEMENT[] =
     D3DDECL_END()
 };
 
-struct VertexWithWeights : public Vertex
-{
-    float weights[BONES_COUNT];
-
-    VertexWithWeights(  D3DXVECTOR3 v = D3DXVECTOR3(),
-                        D3DXVECTOR3 norm = D3DXVECTOR3(1, 0, 0),
-                        DWORD color = BLACK,
-                        float w = 1) : Vertex(v, norm, color)
-    {
-        weights[0] = w;
-        weights[1] = 1-w;
-    }
-};
-
 class Model
 {
 protected:
@@ -128,25 +114,6 @@ public:
     Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
             D3DXVECTOR3 position, float time_speed,
             unsigned granularity, float radius);
-};
-
-class Cylinder : public ModelWithShadow
-{
-protected:
-    const float height;
-    const float radius;
-    const float rotation_angle;
-
-
-    void Tesselate(unsigned vertical_granularity, unsigned horizontal_granularity, DWORD color);
-
-    virtual void SetShaderConstants(IDirect3DDevice9 *device);
-    virtual void Draw(IDirect3DDevice9 *device);
-public:
-    Cylinder(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
-             D3DXVECTOR3 position, float time_speed,
-             unsigned vertical_granularity, unsigned horizontal_granularity,
-             float height, float radius, float rotation_angle);
 };
 
 class Plane : public Model

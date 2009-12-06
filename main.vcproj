@@ -177,18 +177,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\cylinder.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\cylinder.vsh"
-				>
-			</File>
-			<File
-				RelativePath=".\cylinder_shadow.vsh"
-				>
-			</File>
-			<File
 				RelativePath=".\helper.cpp"
 				>
 			</File>
