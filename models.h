@@ -11,6 +11,7 @@ const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
     {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
     {0, 12, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
     {0, 24, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
+    {0, 28, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
     D3DDECL_END()
 };
 
@@ -19,10 +20,12 @@ struct Vertex
     D3DXVECTOR3 v;
     D3DXVECTOR3 norm;
     DWORD color;
+    FLOAT tu, tv;
 
     Vertex( D3DXVECTOR3 v = D3DXVECTOR3(),
             D3DXVECTOR3 norm = D3DXVECTOR3(1, 0, 0),
-            DWORD color = BLACK              ) : v(v), norm(norm), color(color) {}
+            DWORD color = BLACK,
+            FLOAT tu=0, FLOAT tv=0) : v(v), norm(norm), color(color), tu(tu), tv(tv) {}
 };
 
 class Model
@@ -33,6 +36,7 @@ protected:
     IDirect3DIndexBuffer9 *index_buffer;
     IDirect3DVertexShader9 *vertex_shader;
     IDirect3DVertexDeclaration9 *vertex_declaration;
+    IDirect3DTexture9 *texture;
 
     void *vb;
     DWORD *ib;
@@ -50,6 +54,7 @@ protected:
 
     void InitVIB(IDirect3DDevice9 *device);
     void InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR *shader_file);
+    void InitTexture(IDirect3DDevice9 *device, const TCHAR *texture_file);
 
     virtual void SetShaderConstants(IDirect3DDevice9 *device);
     virtual void Draw(IDirect3DDevice9 *device) = 0;
@@ -58,7 +63,7 @@ public:
     Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
              const unsigned vcount, const unsigned icount,
              D3DXVECTOR3 position, float time_speed);
-    virtual void Render(IDirect3DDevice9 *device, bool extra = false);
+    virtual void Render(IDirect3DDevice9 *device);
     void SetRotation(float angle);
     void SetPosition(D3DXVECTOR3 position);
     static void SetTime(unsigned time);
@@ -83,7 +88,7 @@ public:
     ModelWithShadow(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
              const unsigned vcount, const unsigned icount,
              D3DXVECTOR3 position, float time_speed);
-    virtual void Render(IDirect3DDevice9 *device, bool force_no_shadow = false);
+    virtual void Render(IDirect3DDevice9 *device);
 
     void SetShadowMatrix(D3DXMATRIX m);
     virtual ~ModelWithShadow();
@@ -103,6 +108,7 @@ protected:
     virtual void Draw(IDirect3DDevice9 *device);
 public:
     Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
+            const TCHAR * texture_file,
             D3DXVECTOR3 position, float time_speed,
             unsigned granularity, float radius);
 };
@@ -119,6 +125,7 @@ protected:
 
 public:
     Plane(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
+          const TCHAR * texture_file,
           D3DXVECTOR3 position, D3DXVECTOR3 normal,
           unsigned granularity, float size);
 };

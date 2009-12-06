@@ -2,6 +2,7 @@
 #include "models.h"
 
 Plane::Plane(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
+             const TCHAR *texture_file,
              D3DXVECTOR3 position, D3DXVECTOR3 normal,
              unsigned granularity, float size) :
         Model(sizeof(Vertex), VERTEX_ELEMENT,
@@ -14,6 +15,7 @@ Plane::Plane(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
 
     InitVIB(device);
     InitVDeclAndShader(device, shader_file);
+    InitTexture(device, texture_file);
 }
 
 void Plane::Tesselate(unsigned granularity, DWORD color)

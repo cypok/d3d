@@ -34,6 +34,11 @@ void Model::InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR * shader_fi
     ReleaseInterface(code);
 }
 
+void Model::InitTexture(IDirect3DDevice9 *device, const TCHAR *texture_file)
+{
+    D3DXCreateTextureFromFile(device, texture_file, &texture);
+}
+
 Model::Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
              const unsigned vcount, const unsigned icount,
              D3DXVECTOR3 position, float time_speed) : 
@@ -51,6 +56,7 @@ Model::Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_eleme
     index_buffer = NULL;
     vertex_shader = NULL;
     vertex_declaration = NULL;
+    texture = NULL;
 }
 
 Model::~Model()
@@ -61,9 +67,10 @@ Model::~Model()
     ReleaseInterface(index_buffer);
     ReleaseInterface(vertex_shader);
     ReleaseInterface(vertex_declaration);
+    ReleaseInterface(texture);
 }
 
-void Model::Render(IDirect3DDevice9 *device, bool)
+void Model::Render(IDirect3DDevice9 *device)
 {
     SetShaderConstants(device);
     OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof_vertex) );
@@ -136,13 +143,18 @@ void ModelWithShadow::InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR *
     OK( D3DXAssembleShaderFromFile(shader_file, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
     OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), &vertex_shader) );
 
-    OK( D3DXAssembleShaderFromFile(shadow_shader_file, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
-    OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), &shadow_vertex_shader) );
+    if(shadow_shader_file != NULL)
+    {
+        OK( D3DXAssembleShaderFromFile(shadow_shader_file, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
+        OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), &shadow_vertex_shader) );
+    }
+    else
+        shadow_vertex_shader = NULL;
 
     ReleaseInterface(code);
 }
 
-void ModelWithShadow::Render(IDirect3DDevice9 *device, bool force_no_shadow)
+void ModelWithShadow::Render(IDirect3DDevice9 *device)
 {
     SetShaderConstants(device);
     OK( device->SetStreamSource(0, vertex_buffer, 0, sizeof_vertex) );
@@ -152,7 +164,7 @@ void ModelWithShadow::Render(IDirect3DDevice9 *device, bool force_no_shadow)
     OK( device->SetVertexShader(vertex_shader) );
     Draw(device);
 
-    if(!force_no_shadow)
+    if(shadow_vertex_shader != NULL)
     {
         OK( device->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_EQUAL) );
         OK( device->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS) );
@@ -165,7 +177,6 @@ void ModelWithShadow::Render(IDirect3DDevice9 *device, bool force_no_shadow)
         OK( device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE) );
         OK( device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO) );
     }
-
 }
 
 ModelWithShadow::~ModelWithShadow()

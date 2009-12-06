@@ -26,13 +26,14 @@ const float         PYRAMID_RADIUS          = sqrtf(1.5f);
 const float         PYRAMID_ORBIT           = 1.5f;
 const float         PYRAMID_MORPHING_SPEED  = 0.00f;
 const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(40, 200, 200);
+const TCHAR         PYRAMID_TEXTURE[]       = _T("earth.bmp");
 
-const DWORD         PLANE_COLOR         = D3DCOLOR_XRGB(170, 170, 170);
-const TCHAR         PLANE_SHADER[]      = _T("plane.vsh");
-const D3DXVECTOR3   PLANE_POSITION      = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
-const D3DXVECTOR3   PLANE_NORMAL        = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
-const unsigned      PLANE_GRANULARITY   = 300;
-const float         PLANE_SIZE          = 50.0f;
+const DWORD         PLANE_COLOR             = D3DCOLOR_XRGB(170, 170, 170);
+const TCHAR         PLANE_SHADER[]          = _T("plane.vsh");
+const D3DXVECTOR3   PLANE_POSITION          = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
+const D3DXVECTOR3   PLANE_NORMAL            = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
+const unsigned      PLANE_GRANULARITY       = 300;
+const float         PLANE_SIZE              = 50.0f;
 
 const unsigned TIMER_FREQ = 10;
 
@@ -222,7 +223,7 @@ void Render(IDirect3DDevice9 *device, Model * plane, Model * bulb, std::vector<M
     OK( device->BeginScene() );
     OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, GRAY, 1.0f, 0 ) );
     
-    bulb->Render(device, true);
+    bulb->Render(device);
 
     OK( device->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_REPLACE) );
     plane->Render(device);
@@ -282,11 +283,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        pyramid = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
+        pyramid = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_TEXTURE, PYRAMID_POSITION, PYRAMID_MORPHING_SPEED,
             PYRAMID_GRANULARITY, PYRAMID_RADIUS);
-        bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, BULB_SHADER, POINT_POSITION, 0,
+        bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, NULL, NULL, POINT_POSITION, 0,
             BULB_GRANULARITY, BULB_RADIUS);
-        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
+        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, NULL, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
 
         std::vector<Model*> models;
         models.push_back(pyramid);
