@@ -379,6 +379,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         case 'W': IncCoord(hWnd, LIGHT_POS); break;
         case 'S': DecCoord(hWnd, LIGHT_POS); break;
+
+        case VK_ESCAPE:
+            PostQuitMessage(0);
+            break;
         }
         break;
 
