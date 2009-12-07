@@ -129,6 +129,8 @@ void InitD3D(HWND hWnd, IDirect3D9 **d3d, IDirect3DDevice9 **device)
         OK( (*device)->SetRenderState( RENDER_STATES[i].state,
                                        RENDER_STATES[i].value )
         );
+
+    OK( (*device)->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR) );
 }
 
 void SetViewMatrix(IDirect3DDevice9 *device, float rho, float tetha, float phi)
