@@ -79,7 +79,7 @@ const Coord COORDS[] = {
     { -1e37f,       1e37f,          D3DX_PI/24,     D3DX_PI*3/2 },     // PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID ORBIT PHI
-    { -1.80f,        1e37f,          0.05f,          1.5f      },      // LIGHT POSITION
+    { -1.80f,       1e37f,          0.05f,          1.5f      },      // LIGHT POSITION
 };
 
 

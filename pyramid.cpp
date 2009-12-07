@@ -1,13 +1,13 @@
 #include "stdafx.h"
 #include "models.h"
 
-const D3DXVECTOR3 INITIAL_PYRAMID[] = {       // it is generated for radius = sqrt(2)
-    D3DXVECTOR3(  1.0f,  1.0f,  0.0f       ),
-    D3DXVECTOR3(  1.0f, -1.0f,  0.0f       ),
-    D3DXVECTOR3( -1.0f, -1.0f,  0.0f       ),
-    D3DXVECTOR3( -1.0f,  1.0f,  0.0f       ),
-    D3DXVECTOR3(  0.0f,  0.0f,  sqrtf(2.0) ),
-    D3DXVECTOR3(  0.0f,  0.0f, -sqrtf(2.0) ),
+const D3DXVECTOR3 INITIAL_PYRAMID[] = {       // it is generated for radius = 1
+    D3DXVECTOR3(  1.0f,  0.0f,  0.0f       ),
+    D3DXVECTOR3(  0.0f, -1.0f,  0.0f       ),
+    D3DXVECTOR3( -1.0f,  0.0f,  0.0f       ),
+    D3DXVECTOR3(  0.0f,  1.0f,  0.0f       ),
+    D3DXVECTOR3(  0.0f,  0.0f,  1.0f       ),
+    D3DXVECTOR3(  0.0f,  0.0f, -1.0f       ),
 };
 const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
 
@@ -65,7 +65,10 @@ DWORD Pyramid::FindOrCreate(bool up, unsigned level, unsigned quarter, unsigned 
     if (vertices[abs_index].color == 0) // unitialized vertex
     {
         float tu, tv;
-        tu = 0.5f - atan2(v.y, v.x)/2/D3DX_PI;
+        if (quarter % 2 == 0)
+            tu = atan2(fabs(v.y), fabs(v.x))/(D3DX_PI/2)/4 + 0.25f*(quarter);
+        else
+            tu = -atan2(fabs(v.y), fabs(v.x))/(D3DX_PI/2)/4 + 0.25f*(quarter+1);
         tv = atan2(sqrtf(v.x*v.x+v.y*v.y), v.z)/D3DX_PI;
         vertices[abs_index] = Vertex(v,
                                norm,
@@ -96,9 +99,9 @@ void Pyramid::Tesselate(unsigned granularity, DWORD color)
     {
         bool up = ( sides[j][0] == 4 );
         unsigned q = sides[j][up ? 1 : 2];
-        D3DXVECTOR3 top = INITIAL_PYRAMID[sides[j][0]]*radius/sqrtf(2);
-        D3DXVECTOR3 to_left = (INITIAL_PYRAMID[sides[j][1]]*radius/sqrtf(2) - top)/static_cast<float>(granularity);
-        D3DXVECTOR3 to_right = (INITIAL_PYRAMID[sides[j][2]]*radius/sqrtf(2) - top)/static_cast<float>(granularity);
+        D3DXVECTOR3 top = INITIAL_PYRAMID[sides[j][0]]*radius;
+        D3DXVECTOR3 to_left = (INITIAL_PYRAMID[sides[j][1]]*radius - top)/static_cast<float>(granularity);
+        D3DXVECTOR3 to_right = (INITIAL_PYRAMID[sides[j][2]]*radius - top)/static_cast<float>(granularity);
         D3DXVECTOR3 norm;
         D3DXVec3Cross(&norm, &to_right, &to_left);
         D3DXVec3Normalize(&norm, &norm);
