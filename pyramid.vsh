@@ -31,6 +31,8 @@ dcl_texcoord v3             ; u,v
 def c0, 0, 0, 0, 0
 def c1, 1, 1, 1, 1
 
+mov     oT0, v3
+
 ; _________________________________
 ; CALCULATING POSITION
 ; recieves: -
