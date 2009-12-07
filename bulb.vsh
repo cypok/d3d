@@ -9,6 +9,10 @@ vs_1_1
 ; _________________________________
 ; OBJECT PROPERTIES
 ; c34 : sphere radius (R)
+; _________________________________
+; LIGHT SOURCES
+; > POINT
+;   c69 : diffuse color (Id)
 
 dcl_position v0             ; vertex
 dcl_color v2                ; color
@@ -40,4 +44,4 @@ m4x4    r9, r1, c12         ; r9 = Pyramid_moving( r9 )
 m4x4    oPos, r9, c4
 
 ; set color
-mov     oD0, c1             ; color = WHITE
+mov     oD0, c69            ; color = WHITE
