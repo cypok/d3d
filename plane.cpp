@@ -46,8 +46,8 @@ void Plane::Tesselate(unsigned granularity, DWORD color)
             vertices[i*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i)*v, normal, color,
                 static_cast<float>(j)/granularity, static_cast<float>(i)/granularity);
             if (i == granularity-1)
-                vertices[(i+1)*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i)*v, normal, color,
-                    static_cast<float>(j)/granularity, static_cast<float>(i)/granularity);
+                vertices[(i+1)*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i+1)*v, normal, color,
+                    static_cast<float>(j)/granularity, static_cast<float>(i+1)/granularity);
 
             if (j > 0)
             {
