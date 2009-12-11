@@ -27,21 +27,24 @@ const float         PYRAMID_ORBIT           = 1.5f;
 const float         PYRAMID_MORPHING_SPEED  = 0.00f;
 const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(40, 200, 200);
 const TCHAR         PYRAMID_TEXTURE[]       = _T("earth.png");
-const TCHAR         PYRAMID_PIXEL_SHADER[]  = _T("pyramid.psh");
+const TCHAR         PYRAMID_PIXEL_SHADER[]  = _T("simple.psh");
 
 const DWORD         PLANE_COLOR             = D3DCOLOR_XRGB(170, 170, 170);
 const TCHAR         PLANE_SHADER[]          = _T("plane.vsh");
 const D3DXVECTOR3   PLANE_POSITION          = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
 const D3DXVECTOR3   PLANE_NORMAL            = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
-const unsigned      PLANE_GRANULARITY       = 300;
+const unsigned      PLANE_GRANULARITY       = 1;
 const float         PLANE_SIZE              = 50.0f;
 const TCHAR         PLANE_TEXTURE[]         = _T("goliath.jpg");
-const TCHAR         PLANE_PIXEL_SHADER[]    = _T("plane.psh");
+const TCHAR         PLANE_PIXEL_SHADER[]    = _T("simple.psh");
+
+const TCHAR         TARGET_SHADER[]          = _T("target.vsh");
+const TCHAR         TARGET_PIXEL_SHADER[]    = _T("simple.psh");
 
 const unsigned TIMER_FREQ = 10;
 
-const int WINDOW_WIDTH = 750;
-const int WINDOW_HEIGHT = 750;
+const int WINDOW_WIDTH = 500;
+const int WINDOW_HEIGHT = 500;
 
 // Light sources!
 const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
@@ -223,22 +226,41 @@ D3DXMATRIX CreateShadowMatrix(D3DXVECTOR3 light_pos, D3DXVECTOR3 plane_pos, D3DX
     return -(M1-M2+M3+M4);
 }
 
-void Render(IDirect3DDevice9 *device, Model * plane, Model * bulb, std::vector<Model*> models)
+void Render(IDirect3DDevice9 *device, Model * plane, Model * bulb, std::vector<Model*> models, Model *target)
 {
+    IDirect3DSurface9 *old_surface, *surface;
+    surface = dynamic_cast<TargetPlane*>(target)->GetSurface();
+
     OK( device->BeginScene() );
-    OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, GRAY, 1.0f, 0 ) );
-    
-    bulb->Render(device);
 
-    OK( device->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_REPLACE) );
-    plane->Render(device);
+        OK( device->GetRenderTarget(0, &old_surface) );
 
-    OK( device->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_ZERO) );
-    for(unsigned i = 0; i < models.size(); ++i)
-        models[i]->Render(device);
+        // render to texture
+        OK( device->SetRenderTarget(0, surface) );
+        OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, GRAY, 1.0f, 0 ) );
+        
+        bulb->Render(device);
+
+        OK( device->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_REPLACE) );
+        plane->Render(device);
+
+        OK( device->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_ZERO) );
+        for(unsigned i = 0; i < models.size(); ++i)
+            models[i]->Render(device);
+
+        //dynamic_cast<TargetPlane*>(target)->SaveTexture();
+
+        // render to display
+        OK( device->SetRenderTarget(0, old_surface) );
+        OK( device->Clear( 0, NULL, D3DCLEAR_TARGET, GREEN, 1.0f, 0 ) );
+
+        target->Render(device);
 
     OK( device->EndScene() );
     OK( device->Present(NULL, NULL, NULL, NULL) );
+
+    ReleaseInterface(old_surface);
+    ReleaseInterface(surface);
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR /*lpCmdLine*/, int nCmdShow)
@@ -248,6 +270,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     Pyramid *pyramid = NULL;
     Pyramid *bulb = NULL;
     Plane *plane = NULL;
+    TargetPlane *target = NULL;
 
     MSG msg = {0};
     try
@@ -293,6 +316,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, NULL, NULL, NULL, 
             POINT_POSITION, 0, BULB_GRANULARITY, BULB_RADIUS);
         plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, PLANE_TEXTURE, PLANE_PIXEL_SHADER, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
+        target = new TargetPlane(device, TARGET_SHADER, TARGET_PIXEL_SHADER, WINDOW_WIDTH/2, WINDOW_HEIGHT/2);
 
         std::vector<Model*> models;
         models.push_back(pyramid);
@@ -331,7 +355,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
                                                                      PYRAMID_ORBIT*sinf(angle),
                                                                      0));
                 bulb->SetPosition(POINT_POSITION+D3DXVECTOR3(0,0,GetClassFloat(hWnd, LIGHT_POS)));
-                Render(device, plane, bulb, models);
+                Render(device, plane, bulb, models, target);
             }
         }
     }
@@ -347,6 +371,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     delete pyramid;
     delete plane;
     delete bulb;
+    delete target;
 
     return (int) msg.wParam;
 }

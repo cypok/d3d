@@ -56,6 +56,7 @@ protected:
     void InitVIB(IDirect3DDevice9 *device);
     void InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR *shader_file);
     void InitTextureAndPixelShader(IDirect3DDevice9 *device, const TCHAR *texture_file, const TCHAR *pixel_shader);
+    void InitTextureAndPixelShader(IDirect3DDevice9 *device, unsigned width, unsigned height, const TCHAR *pixel_shader);
 
     virtual void SetShaderConstants(IDirect3DDevice9 *device);
     virtual void Draw(IDirect3DDevice9 *device) = 0;
@@ -129,4 +130,25 @@ public:
           const TCHAR * texture_file, const TCHAR * pixel_shader_file,
           D3DXVECTOR3 position, D3DXVECTOR3 normal,
           unsigned granularity, float size);
+};
+
+class TargetPlane : public Model
+{
+protected:
+    const D3DXVECTOR3 normal;
+
+    void Tesselate(unsigned width, unsigned height);
+
+    void Draw(IDirect3DDevice9 *device);
+
+public:
+    TargetPlane(IDirect3DDevice9 *device, const TCHAR *shader_file,
+          const TCHAR * pixel_shader_file,
+          unsigned width, unsigned height);
+
+    virtual void Render(IDirect3DDevice9 *device);
+    virtual void SetShaderConstants(IDirect3DDevice9 *device);
+
+    IDirect3DSurface9 * GetSurface();
+    void SaveTexture();
 };

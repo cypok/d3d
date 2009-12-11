@@ -205,15 +205,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\pyramid.psh"
-				>
-			</File>
-			<File
 				RelativePath=".\pyramid.vsh"
 				>
 			</File>
 			<File
 				RelativePath=".\pyramid_shadow.vsh"
+				>
+			</File>
+			<File
+				RelativePath=".\simple.psh"
 				>
 			</File>
 			<File
@@ -235,6 +235,14 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\target.vsh"
+				>
+			</File>
+			<File
+				RelativePath=".\target_plane.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter

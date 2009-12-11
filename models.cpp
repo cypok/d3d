@@ -48,6 +48,19 @@ void Model::InitTextureAndPixelShader(IDirect3DDevice9 *device, const TCHAR *tex
     }
 }
 
+void Model::InitTextureAndPixelShader(IDirect3DDevice9 *device, unsigned width, unsigned height, const TCHAR *pixel_shader_file)
+{
+    device->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &texture, NULL);
+    if (pixel_shader_file)
+    {
+        ID3DXBuffer *code = NULL;
+        OK( D3DXAssembleShaderFromFile(pixel_shader_file, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
+        OK( device->CreatePixelShader(static_cast<DWORD*>(code->GetBufferPointer()), &pixel_shader) );
+
+        ReleaseInterface(code);
+    }
+}
+
 Model::Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_element,
              const unsigned vcount, const unsigned icount,
              D3DXVECTOR3 position, float time_speed) : 
