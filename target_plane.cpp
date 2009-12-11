@@ -78,7 +78,7 @@ void TargetPlane::SaveTexture()
     D3DXSaveTextureToFile(_T("render.bmp"), D3DXIFF_BMP, texture, NULL);
 }
 
-void TargetPlane::SetShaderConstants(IDirect3DDevice9 *device)
+void TargetPlane::SetShaderConstants(IDirect3DDevice9 */*device*/)
 {
     ;
 }

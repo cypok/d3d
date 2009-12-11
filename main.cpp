@@ -43,8 +43,8 @@ const TCHAR         TARGET_PIXEL_SHADER[]    = _T("simple.psh");
 
 const unsigned TIMER_FREQ = 10;
 
-const int WINDOW_WIDTH = 500;
-const int WINDOW_HEIGHT = 500;
+const int WINDOW_WIDTH = 750;
+const int WINDOW_HEIGHT = 750;
 
 // Light sources!
 const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
@@ -301,6 +301,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         if (hWnd == NULL)
             throw std::exception();
 
+        RECT window;
+        GetClientRect(hWnd, &window);
+
         SetClassFloat(hWnd, RHO, COORDS[RHO].initial);
         SetClassFloat(hWnd, THETA, COORDS[THETA].initial);
         SetClassFloat(hWnd, PHI, COORDS[PHI].initial);
@@ -316,7 +319,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, NULL, NULL, NULL, 
             POINT_POSITION, 0, BULB_GRANULARITY, BULB_RADIUS);
         plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, PLANE_TEXTURE, PLANE_PIXEL_SHADER, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
-        target = new TargetPlane(device, TARGET_SHADER, TARGET_PIXEL_SHADER, WINDOW_WIDTH/2, WINDOW_HEIGHT/2);
+        target = new TargetPlane(device, TARGET_SHADER, TARGET_PIXEL_SHADER, window.right-window.left, window.bottom - window.top);
 
         std::vector<Model*> models;
         models.push_back(pyramid);
