@@ -43,19 +43,21 @@ void Plane::Tesselate(unsigned granularity, DWORD color)
     for (unsigned i = 0; i < granularity; ++i)
         for (unsigned j = 0; j < granularity+1; ++j)
         {
-            vertices[i*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i)*v, normal, color);
+            vertices[i*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i)*v, normal, color,
+                static_cast<float>(j)/granularity, static_cast<float>(i)/granularity);
             if (i == granularity-1)
-                vertices[(i+1)*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i)*v, normal, color);
+                vertices[(i+1)*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i)*v, normal, color,
+                    static_cast<float>(j)/granularity, static_cast<float>(i)/granularity);
 
             if (j > 0)
             {
                 ib[ci++] = (i+0)*(granularity+1)+(j-1);
-                ib[ci++] = (i+1)*(granularity+1)+(j-1);
                 ib[ci++] = (i+0)*(granularity+1)+(j-0);
+                ib[ci++] = (i+1)*(granularity+1)+(j-1);
 
                 ib[ci++] = (i+1)*(granularity+1)+(j-1);
-                ib[ci++] = (i+1)*(granularity+1)+(j-0);
                 ib[ci++] = (i+0)*(granularity+1)+(j-0);
+                ib[ci++] = (i+1)*(granularity+1)+(j-0);
             }
         }
 }

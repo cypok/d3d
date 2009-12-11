@@ -193,6 +193,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\plane.psh"
+				>
+			</File>
+			<File
 				RelativePath=".\plane.vsh"
 				>
 			</File>

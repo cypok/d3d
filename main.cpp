@@ -12,7 +12,7 @@ struct RS
 const RS RENDER_STATES[] = {
     { D3DRS_FILLMODE, D3DFILL_SOLID },
     //{ D3DRS_FILLMODE, D3DFILL_WIREFRAME },
-    { D3DRS_CULLMODE, D3DCULL_NONE },
+    //{ D3DRS_CULLMODE, D3DCULL_NONE },
     { D3DRS_STENCILENABLE, true },
     { D3DRS_STENCILREF, 1 },
     { D3DRS_ALPHABLENDENABLE, true },
@@ -26,7 +26,7 @@ const float         PYRAMID_RADIUS          = sqrtf(1.5f);
 const float         PYRAMID_ORBIT           = 1.5f;
 const float         PYRAMID_MORPHING_SPEED  = 0.00f;
 const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(40, 200, 200);
-const TCHAR         PYRAMID_TEXTURE[]       = _T("earth.bmp");
+const TCHAR         PYRAMID_TEXTURE[]       = _T("earth.png");
 const TCHAR         PYRAMID_PIXEL_SHADER[]  = _T("pyramid.psh");
 
 const DWORD         PLANE_COLOR             = D3DCOLOR_XRGB(170, 170, 170);
@@ -35,6 +35,8 @@ const D3DXVECTOR3   PLANE_POSITION          = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
 const D3DXVECTOR3   PLANE_NORMAL            = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 const unsigned      PLANE_GRANULARITY       = 300;
 const float         PLANE_SIZE              = 50.0f;
+const TCHAR         PLANE_TEXTURE[]         = _T("goliath.jpg");
+const TCHAR         PLANE_PIXEL_SHADER[]    = _T("plane.psh");
 
 const unsigned TIMER_FREQ = 10;
 
@@ -290,7 +292,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             PYRAMID_POSITION, PYRAMID_MORPHING_SPEED, PYRAMID_GRANULARITY, PYRAMID_RADIUS);
         bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, NULL, NULL, NULL, 
             POINT_POSITION, 0, BULB_GRANULARITY, BULB_RADIUS);
-        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, NULL, NULL, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
+        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, PLANE_TEXTURE, PLANE_PIXEL_SHADER, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
 
         std::vector<Model*> models;
         models.push_back(pyramid);

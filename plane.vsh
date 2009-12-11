@@ -25,10 +25,13 @@ vs_1_1
 dcl_position v0             ; vertex
 dcl_normal v1               ; normal
 dcl_color v2                ; color
+dcl_texcoord v3             ; u,v
 
 ; some useful stuff
 def c0, 0, 0, 0, 0
 def c1, 1, 1, 1, 1
+
+mov     oT0, v3
 
 ; _________________________________
 ; CALCULATING POSITION
