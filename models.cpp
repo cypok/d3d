@@ -37,7 +37,7 @@ void Model::InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR * shader_fi
 void Model::InitTextureAndPixelShader(IDirect3DDevice9 *device, const TCHAR *texture_file, const TCHAR *pixel_shader_file)
 {
     if (texture_file)
-        D3DXCreateTextureFromFile(device, texture_file, &texture);
+        OK( D3DXCreateTextureFromFile(device, texture_file, &texture) );
     if (pixel_shader_file)
     {
         ID3DXBuffer *code = NULL;
@@ -50,7 +50,7 @@ void Model::InitTextureAndPixelShader(IDirect3DDevice9 *device, const TCHAR *tex
 
 void Model::InitTextureAndPixelShader(IDirect3DDevice9 *device, unsigned width, unsigned height, const TCHAR *pixel_shader_file)
 {
-    device->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &texture, NULL);
+    OK( device->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &texture, NULL) );
     if (pixel_shader_file)
     {
         ID3DXBuffer *code = NULL;
@@ -169,14 +169,14 @@ void ModelWithShadow::InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR *
 
     OK( D3DXAssembleShaderFromFile(shader_file, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
     OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), &vertex_shader) );
+    ReleaseInterface(code);
 
     if(shadow_shader_file != NULL)
     {
         OK( D3DXAssembleShaderFromFile(shadow_shader_file, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
         OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), &shadow_vertex_shader) );
+        ReleaseInterface(code);
     }
-
-    ReleaseInterface(code);
 }
 
 void ModelWithShadow::Render(IDirect3DDevice9 *device)
