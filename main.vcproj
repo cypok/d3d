@@ -237,6 +237,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\target.psh"
+				>
+			</File>
+			<File
 				RelativePath=".\target.vsh"
 				>
 			</File>

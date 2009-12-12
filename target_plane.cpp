@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "models.h"
 
+const unsigned FILTER_SIZE = 3;
+const unsigned PIXEL_SHADER_FILTER_REG = 1;
+const unsigned FILTERING_SCALE = 8;
+
 TargetPlane::TargetPlane(IDirect3DDevice9 *device, const TCHAR *shader_file,
           const TCHAR * pixel_shader_file,
           unsigned width, unsigned height):
@@ -8,16 +12,16 @@ TargetPlane::TargetPlane(IDirect3DDevice9 *device, const TCHAR *shader_file,
             (width + 1) * (height + 1),
             6 * width * height,
             D3DXVECTOR3(0.0f, 0.0f, 0.0f), 0.0f),
-        normal(D3DXVECTOR3(0.0f, 0.0f, 1.0f))
+        normal(D3DXVECTOR3(0.0f, 0.0f, 1.0f)), width(width), height(height), current_filter(0)
 {
-    Tesselate(width, height);
+    Tesselate();
 
     InitVIB(device);
     InitVDeclAndShader(device, shader_file);
     InitTextureAndPixelShader(device, width, height, pixel_shader_file);
 }
 
-void TargetPlane::Tesselate(unsigned width, unsigned height)
+void TargetPlane::Tesselate()
 {
     Vertex *vertices = reinterpret_cast<Vertex*>(vb);
 
@@ -78,9 +82,67 @@ void TargetPlane::SaveTexture()
     D3DXSaveTextureToFile(_T("render.bmp"), D3DXIFF_BMP, texture, NULL);
 }
 
-void TargetPlane::SetShaderConstants(IDirect3DDevice9 */*device*/)
+D3DXMATRIX * TargetPlane::GetFilter(unsigned n)
 {
-    ;
+    static float x;
+    x = 1.0f/FILTERING_SCALE;
+    static D3DXMATRIX nothing(
+        0.0f,   0*x,    0.0f,   0.0f,
+        0*x,    x,      0*x,    0.0f,
+        0.0f,   0*x,    0.0f,   0.0f,
+        0.0f,   0.0f,   0.0f,   0.0f
+    );
+
+    x = 1.0f/FILTERING_SCALE;
+    static D3DXMATRIX sharpen(
+        0.0f,   -x,     0.0f,   0.0f,
+        -x,     5*x,    -x,     0.0f,
+        0.0f,   -x,     0.0f,   0.0f,
+        0.0f,   0.0f,   0.0f,   0.0f
+    );
+
+    x = 1.0f/6.0f/FILTERING_SCALE;
+    static D3DXMATRIX blur(
+        0.0f,   x,      0.0f,   0.0f,
+        x,      2*x,    x,      0.0f,
+        0.0f,   x,      0.0f,   0.0f,
+        0.0f,   0.0f,   0.0f,   0.0f
+    );
+
+    x = 0.2f/FILTERING_SCALE;
+    static D3DXMATRIX edges(
+        0.0f,   -x,     0.0f,   0.0f,
+        -x,     4*x,    -x,     0.0f,
+        0.0f,   -x,     0.0f,   0.0f,
+        0.0f,   0.0f,   0.0f,   0.0f
+    );
+
+    x = 1.0f/FILTERING_SCALE;
+    static D3DXMATRIX embossing(
+        0.0f,   x,      0.0f,   0.0f,
+        -x,     0*x,    x,      0.0f,
+        0.0f,   -x,     0.0f,   0.0f,
+        0.0f,   0.0f,   0.0f,   0.0f
+    );
+
+    static D3DXMATRIX *filters[] = {&nothing, &blur, &edges, &embossing, &sharpen};
+    return filters[n % (sizeof(filters)/sizeof(filters[0]))];
+}
+
+void TargetPlane::SetShaderConstants(IDirect3DDevice9 *device)
+{
+    float du = 1.0f / static_cast<float>(width);
+    float dv = 1.0f / static_cast<float>(height);
+    D3DXVECTOR2 center(du/2, -dv/2);
+    D3DXVECTOR2 right (du,   0);
+    D3DXVECTOR2 up    (0,    dv);
+    OK( device->SetVertexShaderConstantF(CENTER_PIXEL_REG, center, 1) );
+    OK( device->SetVertexShaderConstantF(UP_PIXEL_REG,     center+up, 1) );
+    OK( device->SetVertexShaderConstantF(RIGHT_PIXEL_REG,  center+right, 1) );
+    OK( device->SetVertexShaderConstantF(DOWN_PIXEL_REG,   center-up, 1) );
+    OK( device->SetVertexShaderConstantF(LEFT_PIXEL_REG,   center-right, 1) );
+
+    OK( device->SetPixelShaderConstantF(PIXEL_SHADER_FILTER_REG, *GetFilter(current_filter), FILTER_SIZE) );
 }
 
 void TargetPlane::Render(IDirect3DDevice9 *device)
@@ -94,4 +156,9 @@ void TargetPlane::Render(IDirect3DDevice9 *device)
     OK( device->SetRenderState(D3DRS_ZENABLE, TRUE) );
     OK( device->SetRenderState(D3DRS_STENCILENABLE, TRUE) );
     OK( device->SetRenderState(D3DRS_CULLMODE, cull) );
+}
+
+void TargetPlane::SetCurrentFilter(unsigned n)
+{
+    current_filter = n;
 }

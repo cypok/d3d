@@ -136,8 +136,11 @@ class TargetPlane : public Model
 {
 protected:
     const D3DXVECTOR3 normal;
+    const unsigned width, height;
+    unsigned current_filter;
 
-    void Tesselate(unsigned width, unsigned height);
+    void Tesselate();
+    D3DXMATRIX * GetFilter(unsigned n);
 
     void Draw(IDirect3DDevice9 *device);
 
@@ -151,4 +154,5 @@ public:
 
     IDirect3DSurface9 * GetSurface();
     void SaveTexture();
+    void SetCurrentFilter(unsigned n);
 };

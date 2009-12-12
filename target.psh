@@ -1,0 +1,31 @@
+ps_1_4
+
+; _______________
+; FILTERING
+; c1 : 1st row
+; c2 : 2nd row
+; c3 : 3rd row
+; c4 : scale
+
+def c0, 0, 0, 0, 0
+
+texld   r0, t0
+texld   r1, t1
+texld   r2, t2
+texld   r3, t3
+texld   r4, t4
+
+mul     r5.xyz, r0, c2.y
+mad     r5.xyz, r1, c1.y, r5
+mad     r5.xyz, r2, c2.z, r5
+mad     r5.xyz, r3, c3.y, r5
+mad     r5.xyz, r4, c2.x, r5
+
+phase
+
+mov     r0.xyz, r5
+add     r0.xyz, r0, r0
+add     r0.xyz, r0, r0
+add     r0.xyz, r0, r0
+
+mov     r0.w, c0.x

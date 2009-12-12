@@ -101,7 +101,10 @@ void Model::Render(IDirect3DDevice9 *device)
     OK( device->SetIndices(index_buffer) );
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
-    OK( device->SetTexture(0, texture) ); // it could be NULL
+
+    for(int i = 0; i < 5; ++i)
+        OK( device->SetTexture(i, texture) ); // it could be NULL
+
     OK( device->SetPixelShader(pixel_shader) ); // it could be NULL
     Draw(device);
 }

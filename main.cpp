@@ -39,7 +39,7 @@ const TCHAR         PLANE_TEXTURE[]         = _T("goliath.jpg");
 const TCHAR         PLANE_PIXEL_SHADER[]    = _T("simple.psh");
 
 const TCHAR         TARGET_SHADER[]          = _T("target.vsh");
-const TCHAR         TARGET_PIXEL_SHADER[]    = _T("simple.psh");
+const TCHAR         TARGET_PIXEL_SHADER[]    = _T("target.psh");
 
 const unsigned TIMER_FREQ = 10;
 
@@ -66,8 +66,10 @@ const unsigned PHI = 2;
 const unsigned PYRAMID_PHI = 3;
 const unsigned PYRAMID_ORBIT_PHI = 4;
 const unsigned LIGHT_POS = 5;
+const unsigned FILTER = 6;
+const unsigned TIME_VALUE_INDEX = 7;
 
-const unsigned TIME_VALUE_INDEX = 24; // in window class memory
+const unsigned CLASS_VARIABLES = 8;
 
 struct Coord
 {
@@ -93,11 +95,11 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 float GetClassFloat(HWND hWnd, unsigned index) // GetClassFloat
 {
     static long res;
-    return *reinterpret_cast<float*>(&(res = GetClassLong(hWnd, sizeof(float)*index)));
+    return *reinterpret_cast<float*>(&(res = GetClassLong(hWnd, index)));
 }
 void SetClassFloat(HWND hWnd, unsigned index, float value) // SetClassFloat
 {
-    SetClassLong(hWnd, sizeof(float)*index, *reinterpret_cast<LONG*>(&value));
+    SetClassLong(hWnd, index, *reinterpret_cast<LONG*>(&value));
 }
 LONG GetTime(HWND hWnd)
 {
@@ -105,7 +107,7 @@ LONG GetTime(HWND hWnd)
 }
 void IncTime(HWND hWnd)
 {
-    SetClassLong(hWnd, TIME_VALUE_INDEX, 1+GetClassLong(hWnd, TIME_VALUE_INDEX));
+    SetClassLong(hWnd, sizeof(float)*TIME_VALUE_INDEX, 1+GetClassLong(hWnd, sizeof(float)*TIME_VALUE_INDEX));
 }
 
 void InitD3D(HWND hWnd, IDirect3D9 **d3d, IDirect3DDevice9 **device)
@@ -285,7 +287,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         wcex.cbSize         = sizeof(WNDCLASSEX);
         wcex.style          = CS_HREDRAW | CS_VREDRAW;
         wcex.lpfnWndProc    = WndProc;
-        wcex.cbClsExtra     = sizeof(float)*3+sizeof(LONG)+sizeof(float)*3; // here would be stored view coordinates
+        wcex.cbClsExtra     = sizeof(float)*CLASS_VARIABLES; // here would be stored view coordinates
         wcex.cbWndExtra     = 0;
         wcex.hInstance      = hInstance;
         wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAIN));
@@ -304,13 +306,14 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
         RECT window;
         GetClientRect(hWnd, &window);
 
-        SetClassFloat(hWnd, RHO, COORDS[RHO].initial);
-        SetClassFloat(hWnd, THETA, COORDS[THETA].initial);
-        SetClassFloat(hWnd, PHI, COORDS[PHI].initial);
-        SetClassLong(hWnd, TIME_VALUE_INDEX, 0);
-        SetClassFloat(hWnd, PYRAMID_PHI, COORDS[PYRAMID_PHI].initial);
-        SetClassFloat(hWnd, PYRAMID_ORBIT_PHI, COORDS[PYRAMID_ORBIT_PHI].initial);
-        SetClassFloat(hWnd, LIGHT_POS, COORDS[LIGHT_POS].initial);
+        SetClassFloat(hWnd, sizeof(float)*RHO, COORDS[RHO].initial);
+        SetClassFloat(hWnd, sizeof(float)*THETA, COORDS[THETA].initial);
+        SetClassFloat(hWnd, sizeof(float)*PHI, COORDS[PHI].initial);
+        SetClassLong(hWnd, sizeof(float)*TIME_VALUE_INDEX, 0);
+        SetClassFloat(hWnd, sizeof(float)*PYRAMID_PHI, COORDS[PYRAMID_PHI].initial);
+        SetClassFloat(hWnd, sizeof(float)*PYRAMID_ORBIT_PHI, COORDS[PYRAMID_ORBIT_PHI].initial);
+        SetClassFloat(hWnd, sizeof(float)*LIGHT_POS, COORDS[LIGHT_POS].initial);
+        SetClassLong(hWnd, sizeof(float)*FILTER, 0);
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
@@ -343,21 +346,22 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             else
             {
                 Model::SetTime(GetTime(hWnd));
-                SetLights(device, GetClassFloat(hWnd, LIGHT_POS));
+                SetLights(device, GetClassFloat(hWnd, sizeof(float)*LIGHT_POS));
                 SetViewMatrix(device,
-                    GetClassFloat(hWnd, RHO),
-                    GetClassFloat(hWnd, THETA),
-                    GetClassFloat(hWnd, PHI)
+                    GetClassFloat(hWnd, sizeof(float)*RHO),
+                    GetClassFloat(hWnd, sizeof(float)*THETA),
+                    GetClassFloat(hWnd, sizeof(float)*PHI)
                 );
-                D3DXMATRIX m = CreateShadowMatrix(POINT_POSITION+D3DXVECTOR3(0,0,GetClassFloat(hWnd, LIGHT_POS)), PLANE_POSITION, PLANE_NORMAL);
+                D3DXMATRIX m = CreateShadowMatrix(POINT_POSITION+D3DXVECTOR3(0,0,GetClassFloat(hWnd, sizeof(float)*LIGHT_POS)), PLANE_POSITION, PLANE_NORMAL);
                 pyramid->SetShadowMatrix(m);
 
-                pyramid->SetRotation(GetClassFloat(hWnd, PYRAMID_PHI));
-                float angle = GetClassFloat(hWnd, PYRAMID_ORBIT_PHI);
+                pyramid->SetRotation(GetClassFloat(hWnd, sizeof(float)*PYRAMID_PHI));
+                float angle = GetClassFloat(hWnd, sizeof(float)*PYRAMID_ORBIT_PHI);
                 pyramid->SetPosition(PYRAMID_POSITION + D3DXVECTOR3(PYRAMID_ORBIT*cosf(angle),
                                                                      PYRAMID_ORBIT*sinf(angle),
                                                                      0));
-                bulb->SetPosition(POINT_POSITION+D3DXVECTOR3(0,0,GetClassFloat(hWnd, LIGHT_POS)));
+                bulb->SetPosition(POINT_POSITION+D3DXVECTOR3(0,0,GetClassFloat(hWnd, sizeof(float)*LIGHT_POS)));
+                target->SetCurrentFilter(GetClassLong(hWnd, sizeof(float)*FILTER));
                 Render(device, plane, bulb, models, target);
             }
         }
@@ -381,14 +385,14 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
 void IncCoord(HWND hWnd, unsigned coord)
 {
-    float var = GetClassFloat(hWnd, coord) + COORDS[coord].delta;
-    SetClassFloat(hWnd, coord, min(var, COORDS[coord].max));
+    float var = GetClassFloat(hWnd, sizeof(float)*coord) + COORDS[coord].delta;
+    SetClassFloat(hWnd, sizeof(float)*coord, min(var, COORDS[coord].max));
 }
 
 void DecCoord(HWND hWnd, unsigned coord)
 {
-    float var = GetClassFloat(hWnd, coord) - COORDS[coord].delta;
-    SetClassFloat(hWnd, coord, max(var, COORDS[coord].min));
+    float var = GetClassFloat(hWnd, sizeof(float)*coord) - COORDS[coord].delta;
+    SetClassFloat(hWnd, sizeof(float)*coord, max(var, COORDS[coord].min));
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -413,6 +417,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         case 'W': IncCoord(hWnd, LIGHT_POS); break;
         case 'S': DecCoord(hWnd, LIGHT_POS); break;
+        
+        case VK_SPACE:
+            SetClassLong(hWnd, sizeof(float)*FILTER, GetClassLong(hWnd, sizeof(float)*FILTER) + 1);
+            break;
 
         case VK_ESCAPE:
             PostQuitMessage(0);
