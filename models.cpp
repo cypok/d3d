@@ -144,8 +144,8 @@ void ModelWithShadow::SetShaderConstants(IDirect3DDevice9 *device)
 {
     Model::SetShaderConstants(device);
 
-    device->SetVertexShaderConstantF(SHADOW_MATRIX_REG, shadow_matrix, WORLD_DIMENSION + 1);
-    device->SetVertexShaderConstantF(SHADOW_COLOR_REG, SHADOW_COLOR, 1);
+    OK( device->SetVertexShaderConstantF(SHADOW_MATRIX_REG, shadow_matrix, WORLD_DIMENSION + 1) );
+    OK( device->SetVertexShaderConstantF(SHADOW_COLOR_REG, SHADOW_COLOR, 1) );
 }
 
 void ModelWithShadow::InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR * shader_file, const TCHAR * shadow_shader_file)
