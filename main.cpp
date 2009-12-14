@@ -421,6 +421,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case VK_SPACE:
             SetClassLong(hWnd, sizeof(float)*FILTER, GetClassLong(hWnd, sizeof(float)*FILTER) + 1);
             break;
+        
+        case VK_BACK:
+            SetClassLong(hWnd, sizeof(float)*FILTER, GetClassLong(hWnd, sizeof(float)*FILTER) - 1);
+            break;
 
         case VK_ESCAPE:
             PostQuitMessage(0);
