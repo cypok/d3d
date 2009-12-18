@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "models.h"
 
+const unsigned TEXTURE_REPEATITION = 2;
+
 const D3DXVECTOR3 INITIAL_PYRAMID[] = {       // it is generated for radius = 1
     D3DXVECTOR3(  1.0f,  0.0f,  0.0f       ),
     D3DXVECTOR3(  0.0f, -1.0f,  0.0f       ),
@@ -70,6 +72,8 @@ DWORD Pyramid::FindOrCreate(bool up, unsigned level, unsigned quarter, unsigned 
         else
             tu = -atan2(fabs(v.y), fabs(v.x))/(D3DX_PI/2)/4 + 0.25f*(quarter+1);
         tv = atan2(sqrtf(v.x*v.x+v.y*v.y), v.z)/D3DX_PI;
+        tu *= TEXTURE_REPEATITION;
+        tv *= TEXTURE_REPEATITION;
         vertices[abs_index] = Vertex(v,
                                norm,
                                color ? color : ALL_COLORS[(up?0:1)*4+quarter],
