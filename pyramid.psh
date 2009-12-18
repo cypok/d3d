@@ -1,5 +1,39 @@
 ps_1_4
 
-def c0, 0.5, 0, 0, 0
+; c0 : ambient color
+; c1 : point color
 
-texld   r0, t0
+; t0 : texture coords
+; t1 : vector to light
+; t2 : normal of pixel
+; t3 : vector to eye
+
+texld   r0.rgba, t0         ; r0 = color
+texcrd  r1.xyz, t1          ; r1 = vector to light (L)
+texcrd  r2.xyz, t2          ; r2 = normal (n)
+texcrd  r3.xyz, t3          ; r3 = vector to eye (eye)
+
+; --------- ambient
+mov     r4.rgb, c0          ; r4 = light color (ambient)
+
+; --------- diffuse
+dp3_sat r5.x, r2, r1        ; r5 = (n,L)
+mad     r4.rgb, c1, r5.x, r4 ; r4 = CL * (n,L) + ambient
+
+; --------- specular
+dp3_x2  r5.x, r2, r1        ; r5 = 2(n,L)
+mul     r5.xyz, r2, r5.x    ; r5 = 2(n,L)*norm
+sub     r5.xyz, r5, r1      ; r5 = 2(n,L)*norm - L
+dp3_sat r5.x, r5, r3        ; r5 = (eye, 2(n,L)*norm - L) = f
+
+phase
+
+mul     r5.x, r5.x, r5.x    ; r5 = f^2
+mul     r5.x, r5.x, r5.x    ; r5 = f^4
+mul     r5.x, r5.x, r5.x    ; r5 = f^8
+mul     r5.x, r5.x, r5.x    ; r5 = f^16
+mad     r4.rgb, c1, r5.x, r4 ; r4 = CL * f^16 + ambient + diffuse
+
+; --------- sum up colors
+mul     r0.rgb, r0, r4      ; r0 = C * (ambient + diffuse + specular)
+mov     r0.a, r0.r

@@ -1,7 +1,7 @@
 #pragma once
 #include "stdafx.h"
 
-enum {
+enum VertexShader {
     // matrices
     EYE_REG = 3,
     VIEW_MATRIX_REG = 4,
@@ -40,4 +40,9 @@ enum {
 
     ANISOTROPIC_DIFFUSE_COLORS_REG = 96,
     ANISOTROPIC_SPECULAR_COLORS_REG = 112,
+};
+
+enum PixelShader {
+    PS_AMBIENT_COLOR_REG = 0,
+    PS_POINT_COLOR_REG = 1,
 };

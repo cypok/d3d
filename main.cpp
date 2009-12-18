@@ -22,11 +22,11 @@ const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");
 const TCHAR         PYRAMID_SHADOW_SHADER[] = _T("pyramid_shadow.vsh");
 const unsigned      PYRAMID_GRANULARITY     = 300;
 const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, -0.5f);
-const float         PYRAMID_RADIUS          = sqrtf(1.5f);
-const float         PYRAMID_ORBIT           = 1.5f;
+const float         PYRAMID_RADIUS          = sqrtf(0.5f);
+const float         PYRAMID_ORBIT           = 0.3f;
 const float         PYRAMID_MORPHING_SPEED  = 0.00f;
 const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(40, 200, 200);
-const TCHAR         PYRAMID_TEXTURE[]       = _T("earth.png");
+const TCHAR         PYRAMID_TEXTURE[]       = _T("rocks_texture.tga");
 const TCHAR         PYRAMID_PIXEL_SHADER[]  = _T("pyramid.psh");
 
 const DWORD         PLANE_COLOR             = D3DCOLOR_XRGB(170, 170, 170);
@@ -48,14 +48,14 @@ const float MOUSE_SENS = 0.08f;
 // Light sources!
 const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 
-const D3DXVECTOR3   POINT_POSITION(0.5f, -1.5f, 0.0f); // z-coord could be variated
+const D3DXVECTOR3   POINT_POSITION(0.8f, -0.8f, 0.0f); // z-coord could be variated
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
 const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(0.5f, 0.0f, 0.1f);
 
 const TCHAR         BULB_SHADER[] = _T("bulb.vsh");
 const unsigned      BULB_GRANULARITY = 5;
-const float         BULB_RADIUS = 0.1f;
+const float         BULB_RADIUS = 0.05f;
 
 const float SPECULAR_DEGRADATION = 0.1f;
 
@@ -78,12 +78,12 @@ struct Coord
 
 const Coord COORDS[] = {
     /* MIN */       /* MAX */       /* DELTA */     /* INITIAL */
-    { 3.0f,         20.0f,          0.25f,          4.0f      },     // RHO
+    { 1.0f,         20.0f,          0.25f,          4.0f      },     // RHO
     { D3DX_PI/24,   D3DX_PI*23/24,  D3DX_PI/24,     D3DX_PI*11/24 }, // THETA
     { -1e37f,       1e37f,          D3DX_PI/24,     D3DX_PI*3/2 },     // PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID ORBIT PHI
-    { -1.80f,       1e37f,          0.05f,          1.5f      },      // LIGHT POSITION
+    { -1.80f,       1.0f,           0.01f,          0.5f      },      // LIGHT POSITION
 };
 
 
@@ -164,7 +164,7 @@ void SetViewMatrix(IDirect3DDevice9 *device, float rho, float tetha, float phi)
     );
 
     // Projective
-    float front = COORDS[RHO].min * 0.35f;
+    float front = COORDS[RHO].min * 0.85f;
     float back = COORDS[RHO].max * 2.0f;
     float a = back / (back - front);
     float b = - front * a;
@@ -187,10 +187,13 @@ void SetLights(IDirect3DDevice9 *device, float light_pos)
     OK( device->SetVertexShaderConstantF(SPECULAR_DEGRADATION_REG, v, 1) );
 
     OK( device->SetVertexShaderConstantF(SCENE_COLOR_AMBIENT_REG, SCENE_COLOR_AMBIENT, 1) );
+    OK( device->SetPixelShaderConstantF(PS_AMBIENT_COLOR_REG, SCENE_COLOR_AMBIENT, 1) );
 
     OK( device->SetVertexShaderConstantF(POINT_POSITION_REG, POINT_POSITION+D3DXVECTOR3(0, 0, light_pos), 1) );
+
     OK( device->SetVertexShaderConstantF(POINT_COLOR_DIFFUSE_REG, POINT_COLOR_DIFFUSE, 1) );
-    OK( device->SetVertexShaderConstantF(POINT_COLOR_SPECULAR_REG, POINT_COLOR_SPECULAR, 1) );
+    OK( device->SetPixelShaderConstantF(PS_POINT_COLOR_REG, POINT_COLOR_DIFFUSE, 1) );
+
     OK( device->SetVertexShaderConstantF(POINT_ATTENUATION_FACTOR_REG, POINT_ATTENUATION_FACTOR, 1) );
 
 }
