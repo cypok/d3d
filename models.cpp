@@ -156,14 +156,14 @@ void ModelWithShadow::InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR *
 
     OK( D3DXAssembleShaderFromFile(shader_file, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
     OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), &vertex_shader) );
+    ReleaseInterface(code);
 
     if(shadow_shader_file != NULL)
     {
         OK( D3DXAssembleShaderFromFile(shadow_shader_file, NULL, NULL, D3DXSHADER_DEBUG, &code, NULL) );
         OK( device->CreateVertexShader(static_cast<DWORD*>(code->GetBufferPointer()), &shadow_vertex_shader) );
+        ReleaseInterface(code);
     }
-
-    ReleaseInterface(code);
 }
 
 void ModelWithShadow::Render(IDirect3DDevice9 *device)
