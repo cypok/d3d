@@ -43,6 +43,8 @@ const unsigned TIMER_FREQ = 10;
 const int WINDOW_WIDTH = 750;
 const int WINDOW_HEIGHT = 750;
 
+const float MOUSE_SENS = 0.08f;
+
 // Light sources!
 const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 
@@ -292,7 +294,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
             PYRAMID_POSITION, PYRAMID_MORPHING_SPEED, PYRAMID_GRANULARITY, PYRAMID_RADIUS);
         bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, NULL, NULL, NULL, 
             POINT_POSITION, 0, BULB_GRANULARITY, BULB_RADIUS);
-        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, PLANE_TEXTURE, PLANE_PIXEL_SHADER, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
+        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, NULL, NULL, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
 
         std::vector<Model*> models;
         models.push_back(pyramid);
@@ -351,20 +353,22 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
     return (int) msg.wParam;
 }
 
-void IncCoord(HWND hWnd, unsigned coord)
+void IncCoord(HWND hWnd, unsigned coord, bool normal=true)
 {
-    float var = GetClassFloat(hWnd, coord) + COORDS[coord].delta;
+    float var = GetClassFloat(hWnd, coord) + COORDS[coord].delta*(normal ? 1 : MOUSE_SENS);
     SetClassFloat(hWnd, coord, min(var, COORDS[coord].max));
 }
 
-void DecCoord(HWND hWnd, unsigned coord)
+void DecCoord(HWND hWnd, unsigned coord, bool normal=true)
 {
-    float var = GetClassFloat(hWnd, coord) - COORDS[coord].delta;
+    float var = GetClassFloat(hWnd, coord) - COORDS[coord].delta*(normal ? 1 : MOUSE_SENS);
     SetClassFloat(hWnd, coord, max(var, COORDS[coord].min));
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    static int prevX = -1;
+    static int prevY = -1;
     switch (message)
     {
     case WM_KEYDOWN:
@@ -390,6 +394,42 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PostQuitMessage(0);
             break;
         }
+        break;
+
+    case WM_LBUTTONDOWN:
+        prevX = prevY = -1;
+        break;
+
+    case WM_MOUSEMOVE:
+        if (wParam & MK_LBUTTON)
+        {
+            int newX = LOWORD(lParam);
+            int newY = HIWORD(lParam);
+            
+            // initialize
+            if (prevX == -1 && prevY == -1)
+            {
+                prevX = newX;
+                prevY = newY;
+            }
+            
+            while((prevX++) < newX)
+                IncCoord(hWnd, PHI, false);
+            while((prevX--) > newX)
+                DecCoord(hWnd, PHI, false);
+            
+            while((prevY++) < newY)
+                DecCoord(hWnd, THETA, false);
+            while((prevY--) > newY)
+                IncCoord(hWnd, THETA, false);
+        }
+        break;
+    
+    case WM_MOUSEWHEEL:
+        if (static_cast<short>(HIWORD(wParam)) > 0)
+            DecCoord(hWnd, RHO);
+        else
+            IncCoord(hWnd, RHO);
         break;
 
     case WM_TIMER:      IncTime(hWnd);        break;
