@@ -15,6 +15,13 @@ texld   r1.xyzw, t0         ; r1.w = height (h)
 texcrd  r2.xyz, t2          ; r2 = vector to light (L)
 texcrd  r3.xyz, t3          ; r3 = vector to eye (eye)
 
+; normalize L and eye
+dp3_sat r2.w, r2, r2
+mad_d2  r2, r2, 1-r2.w, r2_x2 ; L = L * (3 - L^2)/2
+
+dp3_sat r3.w, r3, r3
+mad_d2  r3, r3, 1-r3.w, r3_x2 ; eye = eye * (3 - eye^2)/2
+
 ; parallax offset
 mul     r4.xy, r1.w, r3
 mad     r0.xy, r4, c3, r0

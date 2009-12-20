@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "models.h"
 
-static const unsigned TEXTURE_REPEATITION = 3;
+static const unsigned TEXTURE_REPEATITION = 2;
 
 const D3DXVECTOR3 INITIAL_PYRAMID[] = {       // it is generated for radius = 1
     D3DXVECTOR3(  1.0f,  0.0f,  0.0f       ),
@@ -69,15 +69,22 @@ DWORD Pyramid::FindOrCreate(bool up, unsigned level, unsigned quarter, unsigned 
         float phi = atan2(v.y, v.x);
         float theta = atan2(sqrtf(v.x*v.x+v.y*v.y), v.z);
 
-        D3DXVECTOR3 tang(-sinf(phi), cosf(phi), 0.0f);
+        D3DXVECTOR3 tang(sinf(phi), -cosf(phi), 0.0f);
         D3DXVECTOR3 binorm(-cosf(phi)*cosf(theta), -sinf(phi)*cosf(theta), sinf(theta));
         D3DXVECTOR3 norm(cosf(phi)*sinf(theta), sinf(phi)*sinf(theta), cosf(theta));
+        
+        float tu, tv;
+        if (quarter % 2 == 0)
+            tu = atan2(fabs(v.y), fabs(v.x))/(D3DX_PI/2)/4 + 0.25f*(quarter);
+        else
+            tu = -atan2(fabs(v.y), fabs(v.x))/(D3DX_PI/2)/4 + 0.25f*(quarter+1);
+        tv = atan2(sqrtf(v.x*v.x+v.y*v.y), v.z)/D3DX_PI;
 
         vertices[abs_index] = Vertex(v,
                                tang,
                                binorm,
                                norm,
-                               TEXTURE_REPEATITION*phi/D3DX_PI, TEXTURE_REPEATITION*theta/D3DX_PI);
+                               TEXTURE_REPEATITION*tu, TEXTURE_REPEATITION*tv);
     }
     return abs_index;
 }
