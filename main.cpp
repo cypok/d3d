@@ -19,7 +19,8 @@ const RS RENDER_STATES[] = {
 };
 
 const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");
-const TCHAR         PYRAMID_SHADOW_SHADER[] = _T("pyramid_shadow.vsh");
+//const TCHAR         PYRAMID_SHADOW_SHADER[] = _T("pyramid_shadow.vsh");
+const TCHAR        *PYRAMID_SHADOW_SHADER   = NULL;
 const unsigned      PYRAMID_GRANULARITY     = 50;
 const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, -0.5f);
 const float         PYRAMID_RADIUS          = sqrtf(0.5f);
@@ -35,9 +36,10 @@ const TCHAR         PLANE_SHADER[]          = _T("plane.vsh");
 const D3DXVECTOR3   PLANE_POSITION          = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
 const D3DXVECTOR3   PLANE_NORMAL            = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 const unsigned      PLANE_GRANULARITY       = 300;
-const float         PLANE_SIZE              = 50.0f;
-//const TCHAR         PLANE_TEXTURE[]         = _T("goliath.jpg");
-//const TCHAR         PLANE_PIXEL_SHADER[]    = _T("plane.psh");
+const float         PLANE_SIZE              = 15.0f;
+const TCHAR         PLANE_TEXTURE[]         = _T("relief_texture.jpg");
+const TCHAR         PLANE_TEXTURE_BUMP[]    = _T("relief_bump.tga");
+const TCHAR         PLANE_PIXEL_SHADER[]    = _T("plane.psh");
 
 const unsigned TIMER_FREQ = 10;
 
@@ -84,7 +86,7 @@ const Coord COORDS[] = {
     { -1e37f,       1e37f,          D3DX_PI/24,     D3DX_PI*3/2 },     // PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID PHI
     { -1e37f,       1e37f,          D3DX_PI/36,     0.0f      },      // PYRAMID ORBIT PHI
-    { -1.80f,       1.0f,           0.01f,          0.5f      },      // LIGHT POSITION
+    { -1.80f,       1.0f,           0.05f,          0.5f      },      // LIGHT POSITION
 };
 
 
@@ -232,7 +234,7 @@ D3DXMATRIX CreateShadowMatrix(D3DXVECTOR3 light_pos, D3DXVECTOR3 plane_pos, D3DX
 void Render(IDirect3DDevice9 *device, Model * plane, Model * bulb, std::vector<Model*> models)
 {
     OK( device->BeginScene() );
-    OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, GRAY, 1.0f, 0 ) );
+    OK( device->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, WHITE, 1.0f, 0 ) );
     
     bulb->Render(device);
 
@@ -294,12 +296,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        pyramid = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER,
+        pyramid = new Pyramid(device, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER,
             PYRAMID_TEXTURE, PYRAMID_TEXTURE_BUMP, PYRAMID_PIXEL_SHADER,
             PYRAMID_POSITION, PYRAMID_MORPHING_SPEED, PYRAMID_GRANULARITY, PYRAMID_RADIUS);
-        bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, NULL, NULL, NULL, NULL, 
+        bulb = new Pyramid(device, BULB_SHADER, NULL, NULL, NULL, NULL, 
             POINT_POSITION, 0, BULB_GRANULARITY, BULB_RADIUS);
-        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, NULL, NULL, NULL,
+        plane = new Plane(device, PLANE_SHADER,
+            PLANE_TEXTURE, PLANE_TEXTURE_BUMP, PLANE_PIXEL_SHADER,
             PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
 
         std::vector<Model*> models;

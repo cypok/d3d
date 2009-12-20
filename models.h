@@ -9,23 +9,26 @@ const D3DXCOLOR SHADOW_COLOR(0.0f, 0.0f, 0.05f, 1.0f);
 const D3DVERTEXELEMENT9 VERTEX_ELEMENT[] =
 {
     {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
-    {0, 12, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
-    {0, 24, D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0},
-    {0, 28, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+    {0, 12, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TANGENT, 0},
+    {0, 24, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_BINORMAL, 0},
+    {0, 36, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
+    {0, 48, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
     D3DDECL_END()
 };
 
 struct Vertex
 {
     D3DXVECTOR3 v;
+    D3DXVECTOR3 tang;
+    D3DXVECTOR3 binorm;
     D3DXVECTOR3 norm;
-    DWORD color;
     FLOAT tu, tv;
 
-    Vertex( D3DXVECTOR3 v = D3DXVECTOR3(),
-            D3DXVECTOR3 norm = D3DXVECTOR3(1, 0, 0),
-            DWORD color = BLACK,
-            FLOAT tu=0, FLOAT tv=0) : v(v), norm(norm), color(color), tu(tu), tv(tv) {}
+    Vertex( D3DXVECTOR3 v = D3DXVECTOR3(0, 0, 0),
+            D3DXVECTOR3 tang = D3DXVECTOR3(1, 0, 0),
+            D3DXVECTOR3 binorm = D3DXVECTOR3(0, 1, 0),
+            D3DXVECTOR3 norm = D3DXVECTOR3(0, 0, 1),
+            FLOAT tu=0, FLOAT tv=0) : v(v), tang(tang), binorm(binorm), norm(norm), tu(tu), tv(tv) {}
 };
 
 class Model
@@ -103,13 +106,13 @@ protected:
 
     void Add3Indices(unsigned *ci, DWORD i1, DWORD i2, DWORD i3);
     DWORD AbsIndex(bool up, unsigned level, unsigned quarter, unsigned index);
-    DWORD FindOrCreate(bool up, unsigned level, unsigned quarter, unsigned index, D3DXVECTOR3 v, D3DXVECTOR3 norm, DWORD color);
-    void Tesselate(unsigned granularity, DWORD color);
+    DWORD FindOrCreate(bool up, unsigned level, unsigned quarter, unsigned index, D3DXVECTOR3 v, D3DXVECTOR3 norm);
+    void Tesselate(unsigned granularity);
 
     virtual void SetShaderConstants(IDirect3DDevice9 *device);
     virtual void Draw(IDirect3DDevice9 *device);
 public:
-    Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
+    Pyramid(IDirect3DDevice9 *device, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
             const TCHAR * texture_file, const TCHAR * texture_bump_file, const TCHAR * pixel_shader_file,
             D3DXVECTOR3 position, float time_speed,
             unsigned granularity, float radius);
@@ -121,12 +124,12 @@ protected:
     const D3DXVECTOR3 normal;
     const float size;
 
-    void Tesselate(unsigned granularity, DWORD color);
+    void Tesselate(unsigned granularity);
 
     void Draw(IDirect3DDevice9 *device);
 
 public:
-    Plane(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
+    Plane(IDirect3DDevice9 *device, const TCHAR *shader_file,
           const TCHAR * texture_file, const TCHAR * texture_bump_file, const TCHAR * pixel_shader_file,
           D3DXVECTOR3 position, D3DXVECTOR3 normal,
           unsigned granularity, float size);

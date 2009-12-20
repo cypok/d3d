@@ -22,82 +22,40 @@ vs_1_1
 ;   c71 : attenuation (a, b, c)
 ;
 
-dcl_position v0             ; vertex
-dcl_normal v1               ; normal
-dcl_color v2                ; color
-dcl_texcoord v3             ; u,v
+dcl_position    v0          ; vertex
+dcl_tangent     v1          ; tangent
+dcl_binormal    v2          ; binormal
+dcl_normal      v3          ; normal
+dcl_texcoord    v4          ; u,v
 
 ; some useful stuff
 def c0, 0, 0, 0, 0
 def c1, 1, 1, 1, 1
 
-mov     oT0, v3
 
 ; _________________________________
 ; CALCULATING POSITION
 ; recieves: -
 ; returns: r8 (norm), r9 (vertex)
 
-mov     r8, v1              ; r8 = normal
+mov     r8, v3              ; r8 = normal
 m4x4    r9, v0, c12         ; r9 = moving( r9 )
 m4x4    oPos, r9, c4        
 
 ; _________________________________
-; C O L O R   C O L O R   C O L O R
-; recieves: r8 (norm), r9 (vertex)
-; returns: r10 (color)
+; PREPARATION FOR PS
+; receives: r8 (norm), r9 (vertex)
 
-; calculating (eye - v)/|eye-v|
-    sub     r7, c3, r9          ; r7 = eye - v
-    dp3     r0, r7, r7          ; normalizing...
-    rsq     r0, r0              ; ...
-    mul     r7, r7, r0          ; r7 = (eye - v)/|eye-v|
+sub     r0, c68, r9         ; get and normalize vector to light source
+dp3     r1, r0, r0
+rsq     r1, r1
+mul     r10, r0, r1         ; r10 BUSY
 
-; ambient
-    mov     r10, c64            ; ambient
-    
+sub     r0, c3, r9          ; get and normalize vector to eye
+dp3     r1, r0, r0
+rsq     r1, r1
+mul     r11, r0, r1         ; r11 BUSY
 
-; _________________________________
-; CALCULATING POINT COLOR
-; recieves: r7 (eye - v), r8 (norm), r9 (vertex), r10 (color)
-; returns: r10 (color)
-
-    sub     r5, c68, r9         ; r5 = L = LightSource - Vertex
-    dp3     r0, r5, r5          ; normalizing...
-    rsq     r0, r0              ; ...
-    mul     r5, r5, r0          ; r5 = L/|L|
-
-    ; diffuse
-        dp3     r1, r8, r5          ; r1 = (norm, L) << DON'T EDIT R1
-        max     r2, r1, c0          ; r2 = max(r1, 0)
-        
-        mul     r6, c69, r2         ; r6 = Id * (norm, L)
-                                    ; r6 = diffuse
-
-    ; specular
-        add     r1, r1, r1          ; r1 = 2*(norm, L)
-        mad     r1, r1, r8, -r5     ; r1 = 2*(norm, L)*norm - L
-        dp3     r1, r7, r1          ; r1 = ( eye-v, 2*(norm, L)*norm - L )
-
-        mov     r1.w, c33           ; powering and checking that it's > 0
-        lit     r1, r1              ; r1.z = r1^f
-        
-        mul     r2, c70, r1.z       ; r2 = Is * ( eye-v, 2*(norm, L)*norm - L )^f
-                                    ; r2 = specular
-
-    add     r6, r6, r2          ; color = diffuse + specular
-    
-    ; attenuation
-        sub     r5, c68, r9         ; r5 = d = LightSource - Vertex
-        dp3     r0, r5, r5          ; r0 = d^2
-        rsq     r1, r0              ; r1 = 1/d
-        dst     r0, r0, r1          ; r0 = ( 1, d, d^2, 1/d )
-        dp3     r0, r0, c71         ; r0 = a + b*d + c*d^2
-        rcp     r0, r0              ; r0 = 1 / (a + b*d + c*d^2)
-                                    ; r0 = attenuation factor
-    mul     r6, r6, r0          ; color /= (a + b*d + c*d^2)
-    
-add     r10, r10, r6        ; ambient + directional + point
-
-; set color
-mul     oD0, r10, v2        ; color *= C
+mov     oT0, v4             ; t0 = (u,v)
+m3x3    oT2, r10, v1        ; t2 = G(L)
+m3x3    oT3, r11, v1        ; t3 = G(eye)

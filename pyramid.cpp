@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "models.h"
 
-const unsigned TEXTURE_REPEATITION = 3;
+static const unsigned TEXTURE_REPEATITION = 3;
 
 const D3DXVECTOR3 INITIAL_PYRAMID[] = {       // it is generated for radius = 1
     D3DXVECTOR3(  1.0f,  0.0f,  0.0f       ),
@@ -13,7 +13,7 @@ const D3DXVECTOR3 INITIAL_PYRAMID[] = {       // it is generated for radius = 1
 };
 const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
 
-Pyramid::Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
+Pyramid::Pyramid(IDirect3DDevice9 *device, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
                  const TCHAR *texture_file, const TCHAR *texture_bump_file, const TCHAR *pixel_shader_file,
                  D3DXVECTOR3 position, float time_speed,
                  unsigned granularity, float radius) :
@@ -23,7 +23,7 @@ Pyramid::Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file
             position, time_speed),
         radius(radius)
 {
-    Tesselate(granularity, color);
+    Tesselate(granularity);
 
     InitVIB(device);
     InitVDeclAndShader(device, shader_file, shadow_shader_file);
@@ -60,29 +60,29 @@ DWORD Pyramid::AbsIndex(bool up, unsigned level, unsigned quarter, unsigned inde
     return ((up?0:1)*4 + quarter) * one_side_v_count + level*(level+1)/2 + index;
 }
 
-DWORD Pyramid::FindOrCreate(bool up, unsigned level, unsigned quarter, unsigned index, D3DXVECTOR3 v, D3DXVECTOR3 norm, DWORD color)
+DWORD Pyramid::FindOrCreate(bool up, unsigned level, unsigned quarter, unsigned index, D3DXVECTOR3 v, D3DXVECTOR3 /*norm*/)
 {
     DWORD abs_index = AbsIndex(up, level, quarter, index);
     Vertex *vertices = reinterpret_cast<Vertex*>(vb);
-    if (vertices[abs_index].color == 0) // unitialized vertex
+    if (vertices[abs_index].v.x == 0) // unitialized vertex
     {
-        float tu, tv;
-        if (quarter % 2 == 0)
-            tu = atan2(fabs(v.y), fabs(v.x))/(D3DX_PI/2)/4 + 0.25f*(quarter);
-        else
-            tu = -atan2(fabs(v.y), fabs(v.x))/(D3DX_PI/2)/4 + 0.25f*(quarter+1);
-        tv = atan2(sqrtf(v.x*v.x+v.y*v.y), v.z)/D3DX_PI;
-        tu *= TEXTURE_REPEATITION;
-        tv *= TEXTURE_REPEATITION;
+        float phi = atan2(v.y, v.x);
+        float theta = atan2(sqrtf(v.x*v.x+v.y*v.y), v.z);
+
+        D3DXVECTOR3 tang(-sinf(phi), cosf(phi), 0.0f);
+        D3DXVECTOR3 binorm(-cosf(phi)*cosf(theta), -sinf(phi)*cosf(theta), sinf(theta));
+        D3DXVECTOR3 norm(cosf(phi)*sinf(theta), sinf(phi)*sinf(theta), cosf(theta));
+
         vertices[abs_index] = Vertex(v,
+                               tang,
+                               binorm,
                                norm,
-                               color ? color : ALL_COLORS[(up?0:1)*4+quarter],
-                               tu, tv);
+                               TEXTURE_REPEATITION*phi/D3DX_PI, TEXTURE_REPEATITION*theta/D3DX_PI);
     }
     return abs_index;
 }
 
-void Pyramid::Tesselate(unsigned granularity, DWORD color)
+void Pyramid::Tesselate(unsigned granularity)
 {
     unsigned ci = 0; // current index
 
@@ -110,16 +110,16 @@ void Pyramid::Tesselate(unsigned granularity, DWORD color)
         D3DXVec3Cross(&norm, &to_right, &to_left);
         D3DXVec3Normalize(&norm, &norm);
 
-        FindOrCreate(up, 0, q, 0, top, norm, color);
+        FindOrCreate(up, 0, q, 0, top, norm);
 
         for (unsigned l = 1; l <= granularity; ++l)
         {
             unsigned a = AbsIndex(up, l-1, q, 0);
-            FindOrCreate(up, l, q, 0, vertices[AbsIndex(up, l-1, q, 0)].v + to_left, norm, color);
+            FindOrCreate(up, l, q, 0, vertices[AbsIndex(up, l-1, q, 0)].v + to_left, norm);
             for (unsigned i = 1; i < l; ++i)
             {
                 a = AbsIndex(up, l-1, q, i-1);
-                FindOrCreate(up, l, q, i, vertices[AbsIndex(up, l-1, q, i-1)].v + to_right, norm, color);
+                FindOrCreate(up, l, q, i, vertices[AbsIndex(up, l-1, q, i-1)].v + to_right, norm);
                 Add3Indices(&ci,
                     AbsIndex(up, l, q, i),
                     AbsIndex(up, l, q, i-1),
@@ -130,7 +130,7 @@ void Pyramid::Tesselate(unsigned granularity, DWORD color)
                     AbsIndex(up, l-1, q, i));
             }
             a = AbsIndex(up, l-1, q, l-1);
-            FindOrCreate(up, l, q, l, vertices[AbsIndex(up, l-1, q, l-1)].v + to_right, norm, color);
+            FindOrCreate(up, l, q, l, vertices[AbsIndex(up, l-1, q, l-1)].v + to_right, norm);
             Add3Indices(&ci,
                 AbsIndex(up, l, q, l),
                 AbsIndex(up, l, q, l-1),

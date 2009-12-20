@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "models.h"
 
-Plane::Plane(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
+static const unsigned TEXTURE_REPEATITION = 15;
+
+Plane::Plane(IDirect3DDevice9 *device, const TCHAR *shader_file,
              const TCHAR *texture_file, const TCHAR *texture_bump_file, const TCHAR *pixel_shader_file,
              D3DXVECTOR3 position, D3DXVECTOR3 normal,
              unsigned granularity, float size) :
@@ -11,14 +13,14 @@ Plane::Plane(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file,
             position, 0.0f),
         normal(normal), size(size)
 {
-    Tesselate(granularity, color);
+    Tesselate(granularity);
 
     InitVIB(device);
     InitVDeclAndShader(device, shader_file);
     InitTextureAndPixelShader(device, texture_file, texture_bump_file, pixel_shader_file);
 }
 
-void Plane::Tesselate(unsigned granularity, DWORD color)
+void Plane::Tesselate(unsigned granularity)
 {
     Vertex *vertices = reinterpret_cast<Vertex*>(vb);
 
@@ -32,6 +34,7 @@ void Plane::Tesselate(unsigned granularity, DWORD color)
     D3DXVec3Cross(&v, &normal, &u); // now v is ortoganal to normal and u
     D3DXVec3Normalize(&u, &u);
     D3DXVec3Normalize(&v, &v);
+    D3DXVECTOR3 tang = u, binorm = -v;
     u *= size / granularity;
     v *= size / granularity;
 
@@ -43,11 +46,11 @@ void Plane::Tesselate(unsigned granularity, DWORD color)
     for (unsigned i = 0; i < granularity; ++i)
         for (unsigned j = 0; j < granularity+1; ++j)
         {
-            vertices[i*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i)*v, normal, color,
-                static_cast<float>(j)/granularity, static_cast<float>(i)/granularity);
+            vertices[i*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i)*v, tang, binorm, normal,
+                TEXTURE_REPEATITION*static_cast<float>(j)/granularity, TEXTURE_REPEATITION*static_cast<float>(i)/granularity);
             if (i == granularity-1)
-                vertices[(i+1)*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i+1)*v, normal, color,
-                    static_cast<float>(j)/granularity, static_cast<float>(i+1)/granularity);
+                vertices[(i+1)*(granularity+1)+j] = Vertex(start + static_cast<float>(j)*u + static_cast<float>(i+1)*v, tang, binorm, normal,
+                    TEXTURE_REPEATITION*static_cast<float>(j)/granularity, TEXTURE_REPEATITION*static_cast<float>(i+1)/granularity);
 
             if (j > 0)
             {

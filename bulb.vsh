@@ -15,7 +15,6 @@ vs_1_1
 ;   c69 : diffuse color (Id)
 
 dcl_position v0             ; vertex
-dcl_color v2                ; color
 
 ; some useful stuff
 def c0, 0, 0, 0, 0

@@ -1,3 +1,48 @@
 ps_1_4
 
-texld   r0, t0
+; c0 : ambient color
+; c1 : point color
+
+; t0 : texture coords
+; t2 : vector to light
+; t3 : vector to eye
+
+def     c2, 0, 1, 2, 0.5
+
+texld   r0.rgba, t0         ; r0 = color
+texld   r1.xyzw, t0         ; r1 = normal (n), r1.w = height (h)
+texcrd  r2.xyz, t2          ; r2 = vector to light (L)
+texcrd  r3.xyz, t3          ; r3 = vector to eye (eye)
+
+; transforming normal map
+sub_x2  r1.xyz, r1, c2.w     ; r1 = [-1...1]
+
+; --------- diffuse
+dp3_sat r4.rgb, r1, r2      ; r4 = (n,L) (diffuse)
+
+; --------- specular
+dp3_x2  r5.x, r1, r2        ; r5 = 2(n,L)
+mul     r5.xyz, r1, r5.x    ; r5 = 2(n,L)*n
+sub     r5.xyz, r5, r2      ; r5 = 2(n,L)*n - L
+dp3_sat r5, r5, r3          ; r5 = (eye, 2(n,L)*n - L) = f
+
+phase
+
+; -------- specular (continuing)
+mul     r5.x, r5.x, r5.x    ; r5 = f^2
+mul     r5.x, r5.x, r5.x    ; r5 = f^4
+mad     r4.rgb, r5.x, r5.x, r4  ; r4 = f^8 + diffuse
+
+; total diffuse and specular color
+mul     r4.rgb, r4, c1
+
+; don't add diffuse and specular for points,
+; which are not under light
+;cmp     r4.rgb, r2.z, r4, c2.x
+
+; --------- ambient
+add     r4.rgb, r4, c0      ; r4 = light color (ambient)
+
+; --------- sum up colors
+mul     r0.rgb, r0, r4      ; r0 = C * (ambient + diffuse + specular)
+mov     r0.a, r0.r

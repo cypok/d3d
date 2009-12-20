@@ -10,7 +10,7 @@ ps_1_4
 def     c2, 0, 1, 2, 0.5
 
 texld   r0.rgba, t0         ; r0 = color
-texld   r1.xyzw, t0         ; r1 = normal (n)
+texld   r1.xyzw, t0         ; r1 = normal (n), r1.w = height (h)
 texcrd  r2.xyz, t2          ; r2 = vector to light (L)
 texcrd  r3.xyz, t3          ; r3 = vector to eye (eye)
 
@@ -28,6 +28,7 @@ dp3_sat r5, r5, r3          ; r5 = (eye, 2(n,L)*n - L) = f
 
 phase
 
+; -------- specular (continuing)
 mul     r5.x, r5.x, r5.x    ; r5 = f^2
 mul     r5.x, r5.x, r5.x    ; r5 = f^4
 mad     r4.rgb, r5.x, r5.x, r4  ; r4 = f^8 + diffuse
