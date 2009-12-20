@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "models.h"
 
-static const unsigned TEXTURE_REPEATITION = 15;
+static const unsigned TEXTURE_REPEATITION = 30;
 
 Plane::Plane(IDirect3DDevice9 *device, const TCHAR *shader_file,
              const TCHAR *texture_file, const TCHAR *texture_bump_file, const TCHAR *pixel_shader_file,
