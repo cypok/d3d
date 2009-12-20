@@ -22,17 +22,16 @@ mad     r4.rgb, c1, r5.x, r4 ; r4 = CL * (n,L) + ambient
 
 ; --------- specular
 dp3_x2  r5.x, r2, r1        ; r5 = 2(n,L)
-mul     r5.xyz, r2, r5.x    ; r5 = 2(n,L)*norm
-sub     r5.xyz, r5, r1      ; r5 = 2(n,L)*norm - L
-dp3_sat r5.x, r5, r3        ; r5 = (eye, 2(n,L)*norm - L) = f
+mul     r5.xyz, r2, r5.x    ; r5 = 2(n,L)*n
+sub     r5.xyz, r5, r1      ; r5 = 2(n,L)*n - L
+dp3_sat r5.x, r5, r3        ; r5 = (eye, 2(n,L)*n - L) = f
 
 phase
 
 mul     r5.x, r5.x, r5.x    ; r5 = f^2
 mul     r5.x, r5.x, r5.x    ; r5 = f^4
 mul     r5.x, r5.x, r5.x    ; r5 = f^8
-mul     r5.x, r5.x, r5.x    ; r5 = f^16
-mad     r4.rgb, c1, r5.x, r4 ; r4 = CL * f^16 + ambient + diffuse
+mad     r4.rgb, c1, r5.x, r4 ; r4 = CL * f^8 + ambient + diffuse
 
 ; --------- sum up colors
 mul     r0.rgb, r0, r4      ; r0 = C * (ambient + diffuse + specular)

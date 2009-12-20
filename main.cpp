@@ -20,7 +20,7 @@ const RS RENDER_STATES[] = {
 
 const TCHAR         PYRAMID_SHADER[]        = _T("pyramid.vsh");
 const TCHAR         PYRAMID_SHADOW_SHADER[] = _T("pyramid_shadow.vsh");
-const unsigned      PYRAMID_GRANULARITY     = 300;
+const unsigned      PYRAMID_GRANULARITY     = 50;
 const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, -0.5f);
 const float         PYRAMID_RADIUS          = sqrtf(0.5f);
 const float         PYRAMID_ORBIT           = 0.3f;
