@@ -34,10 +34,12 @@ void Model::InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR * shader_fi
     ReleaseInterface(code);
 }
 
-void Model::InitTextureAndPixelShader(IDirect3DDevice9 *device, const TCHAR *texture_file, const TCHAR *pixel_shader_file)
+void Model::InitTextureAndPixelShader(IDirect3DDevice9 *device, const TCHAR *texture_file, const TCHAR *texture_bump_file, const TCHAR *pixel_shader_file)
 {
     if (texture_file)
         D3DXCreateTextureFromFile(device, texture_file, &texture);
+    if (texture_bump_file)
+        D3DXCreateTextureFromFile(device, texture_bump_file, &texture_bump);
     if (pixel_shader_file)
     {
         ID3DXBuffer *code = NULL;
@@ -66,6 +68,7 @@ Model::Model(const unsigned sizeof_vertex, const D3DVERTEXELEMENT9 *vertex_eleme
     vertex_shader = NULL;
     vertex_declaration = NULL;
     texture = NULL;
+    texture_bump = NULL;
     pixel_shader = NULL;
 }
 
@@ -78,6 +81,7 @@ Model::~Model()
     ReleaseInterface(vertex_shader);
     ReleaseInterface(vertex_declaration);
     ReleaseInterface(texture);
+    ReleaseInterface(texture_bump);
     ReleaseInterface(pixel_shader);
 }
 
@@ -89,6 +93,7 @@ void Model::Render(IDirect3DDevice9 *device)
     OK( device->SetVertexDeclaration(vertex_declaration) );
     OK( device->SetVertexShader(vertex_shader) );
     OK( device->SetTexture(0, texture) ); // it could be NULL
+    OK( device->SetTexture(1, texture_bump) ); // it could be NULL
     OK( device->SetPixelShader(pixel_shader) ); // it could be NULL
     Draw(device);
 }

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "models.h"
 
-const unsigned TEXTURE_REPEATITION = 2;
+const unsigned TEXTURE_REPEATITION = 3;
 
 const D3DXVECTOR3 INITIAL_PYRAMID[] = {       // it is generated for radius = 1
     D3DXVECTOR3(  1.0f,  0.0f,  0.0f       ),
@@ -14,7 +14,7 @@ const D3DXVECTOR3 INITIAL_PYRAMID[] = {       // it is generated for radius = 1
 const unsigned INITIAL_PYRAMID_VCOUNT = sizeof(INITIAL_PYRAMID)/sizeof(INITIAL_PYRAMID[0]);
 
 Pyramid::Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file, const TCHAR * shadow_shader_file,
-                 const TCHAR *texture_file, const TCHAR *pixel_shader_file,
+                 const TCHAR *texture_file, const TCHAR *texture_bump_file, const TCHAR *pixel_shader_file,
                  D3DXVECTOR3 position, float time_speed,
                  unsigned granularity, float radius) :
         ModelWithShadow(sizeof(Vertex), VERTEX_ELEMENT,
@@ -27,7 +27,7 @@ Pyramid::Pyramid(IDirect3DDevice9 *device, DWORD color, const TCHAR *shader_file
 
     InitVIB(device);
     InitVDeclAndShader(device, shader_file, shadow_shader_file);
-    InitTextureAndPixelShader(device, texture_file, pixel_shader_file);
+    InitTextureAndPixelShader(device, texture_file, texture_bump_file, pixel_shader_file);
 }
 
 void Pyramid::SetShaderConstants(IDirect3DDevice9 *device)

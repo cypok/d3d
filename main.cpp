@@ -23,10 +23,11 @@ const TCHAR         PYRAMID_SHADOW_SHADER[] = _T("pyramid_shadow.vsh");
 const unsigned      PYRAMID_GRANULARITY     = 50;
 const D3DXVECTOR3   PYRAMID_POSITION        = D3DXVECTOR3(0.0f, 0.0f, -0.5f);
 const float         PYRAMID_RADIUS          = sqrtf(0.5f);
-const float         PYRAMID_ORBIT           = 0.3f;
+const float         PYRAMID_ORBIT           = 0.0f;
 const float         PYRAMID_MORPHING_SPEED  = 0.00f;
 const DWORD         PYRAMID_COLOR           = D3DCOLOR_XRGB(40, 200, 200);
 const TCHAR         PYRAMID_TEXTURE[]       = _T("rocks_texture.tga");
+const TCHAR         PYRAMID_TEXTURE_BUMP[]  = _T("rocks_bump.tga");
 const TCHAR         PYRAMID_PIXEL_SHADER[]  = _T("pyramid.psh");
 
 const DWORD         PLANE_COLOR             = D3DCOLOR_XRGB(170, 170, 170);
@@ -35,8 +36,8 @@ const D3DXVECTOR3   PLANE_POSITION          = D3DXVECTOR3(0.0f, 0.0f, -2.0f);
 const D3DXVECTOR3   PLANE_NORMAL            = D3DXVECTOR3(0.0f, 0.0f, 1.0f);
 const unsigned      PLANE_GRANULARITY       = 300;
 const float         PLANE_SIZE              = 50.0f;
-const TCHAR         PLANE_TEXTURE[]         = _T("goliath.jpg");
-const TCHAR         PLANE_PIXEL_SHADER[]    = _T("plane.psh");
+//const TCHAR         PLANE_TEXTURE[]         = _T("goliath.jpg");
+//const TCHAR         PLANE_PIXEL_SHADER[]    = _T("plane.psh");
 
 const unsigned TIMER_FREQ = 10;
 
@@ -48,7 +49,7 @@ const float MOUSE_SENS = 0.08f;
 // Light sources!
 const D3DXCOLOR     SCENE_COLOR_AMBIENT(0.2f, 0.2f, 0.2f, 0.0f);
 
-const D3DXVECTOR3   POINT_POSITION(0.8f, -0.8f, 0.0f); // z-coord could be variated
+const D3DXVECTOR3   POINT_POSITION(0.6f, -0.6f, 0.0f); // z-coord could be variated
 const D3DXCOLOR     POINT_COLOR_DIFFUSE(0.7f, 0.7f, 0.7f, 0.0f);
 const D3DXCOLOR     POINT_COLOR_SPECULAR(0.5f, 0.5f, 0.5f, 0.0f);
 const D3DXVECTOR3   POINT_ATTENUATION_FACTOR(0.5f, 0.0f, 0.1f);
@@ -293,11 +294,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR 
 
         // INITIALIZING D3D
         InitD3D(hWnd, &d3d, &device);
-        pyramid = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER, PYRAMID_TEXTURE, PYRAMID_PIXEL_SHADER,
+        pyramid = new Pyramid(device, PYRAMID_COLOR, PYRAMID_SHADER, PYRAMID_SHADOW_SHADER,
+            PYRAMID_TEXTURE, PYRAMID_TEXTURE_BUMP, PYRAMID_PIXEL_SHADER,
             PYRAMID_POSITION, PYRAMID_MORPHING_SPEED, PYRAMID_GRANULARITY, PYRAMID_RADIUS);
-        bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, NULL, NULL, NULL, 
+        bulb = new Pyramid(device, POINT_COLOR_DIFFUSE, BULB_SHADER, NULL, NULL, NULL, NULL, 
             POINT_POSITION, 0, BULB_GRANULARITY, BULB_RADIUS);
-        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, NULL, NULL, PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
+        plane = new Plane(device, PLANE_COLOR, PLANE_SHADER, NULL, NULL, NULL,
+            PLANE_POSITION, PLANE_NORMAL, PLANE_GRANULARITY, PLANE_SIZE);
 
         std::vector<Model*> models;
         models.push_back(pyramid);

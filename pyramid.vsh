@@ -85,12 +85,12 @@ mul     r0.xy, r0.xy, r1.w  ; r0.xy = (cosf, sinf)
 
 ; r0 = (cosf, sinf, cost, sint)
 
-;       |   -sinf       cosf        0       |
-;  G =  |   -cosf*cost  -sinf*cost  sint    |
-;       |   cosf*sint   sinf*sint   cost    |
+;       |      sinf         -cosf      0     |
+;  G =  |   -cosf*cost   -sinf*cost   sint   |
+;       |    cosf*sint    sinf*sint   cost   |
 
-mov     r5.x, -r0.y
-mov     r5.y, r0.x
+mov     r5.x, r0.y
+mov     r5.y, -r0.x
 mov     r5.z, c0
 mul     r6.x, -r0.x, r0.z
 mul     r6.y, -r0.y, r0.z
@@ -99,11 +99,6 @@ mul     r7.x, r0.x, r0.w
 mul     r7.y, r0.y, r0.w
 mov     r7.z, r0.z
 
-    ; in future it would be unnecessery
-    mov r8.xy, c0
-    mov r8.z, c1
-
 mov     oT0, v3             ; t0 = (u,v)
-m3x3    oT1, r10, r5        ; t1 = G(L)
-mov     oT2, r8             ; t2 = (0,0,1)
+m3x3    oT2, r10, r5        ; t1 = G(L)
 m3x3    oT3, r11, r5        ; t3 = G(eye)
