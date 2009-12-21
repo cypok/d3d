@@ -37,9 +37,13 @@ void Model::InitVDeclAndShader(IDirect3DDevice9 *device, const TCHAR * shader_fi
 void Model::InitTextureAndPixelShader(IDirect3DDevice9 *device, const TCHAR *texture_file, const TCHAR *texture_bump_file, const TCHAR *pixel_shader_file)
 {
     if (texture_file)
-        D3DXCreateTextureFromFile(device, texture_file, &texture);
+        OK( D3DXCreateTextureFromFileEx(device, texture_file, 0, 0, 5,
+            D3DUSAGE_DYNAMIC, D3DFMT_UNKNOWN, D3DPOOL_DEFAULT, D3DX_DEFAULT,
+            D3DX_DEFAULT, 0, NULL, NULL, &texture) );
     if (texture_bump_file)
-        D3DXCreateTextureFromFile(device, texture_bump_file, &texture_bump);
+        OK( D3DXCreateTextureFromFileEx(device, texture_bump_file, 0, 0, 5,
+            D3DUSAGE_DYNAMIC, D3DFMT_UNKNOWN, D3DPOOL_DEFAULT, D3DX_DEFAULT,
+            D3DX_DEFAULT, 0, NULL, NULL, &texture_bump) );
     if (pixel_shader_file)
     {
         ID3DXBuffer *code = NULL;

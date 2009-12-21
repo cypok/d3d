@@ -41,7 +41,7 @@ dp3_sat r5, r5, r3          ; r5 = (eye, 2(n,L)*n - L) = f
 
 ; -------- specular (continuing)
 mul     r5.x, r5.x, r5.x    ; r5 = f^2
-mad     r4.rgb, r5.x, r5.x, r4  ; r4 = f^8 + diffuse
+mad     r4.rgb, r5.x, r5.x, r4  ; r4 = f^4 + diffuse
 
 ; total diffuse and specular color
 mad     r4.rgb, r4, c1, c0  ; r4 = CA*(ambient)+CP*(diffuse+specular)
